@@ -3,27 +3,24 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
 
+
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    private userRepo: Repository<User>,
   ) {}
 
-  async findPendingUsers() {
-    return this.userRepo.find({ where: { isApproved: false } });
-  }
+  // // Finds a user by email (useful during authentication, etc.)
+  // async findByEmail(email: string) {
+  //   return this.userRepo.findOne({ where: { email } });
+  // }
 
-  async approveUser(id: number) {
-    const user = await this.userRepo.findOneBy({ id });
-    if (!user) throw new NotFoundException('User not found');
-    user.isApproved = true;
-    return this.userRepo.save(user);
-  }
+  // // Creates a new user (this is used by the AuthService during registration)
+  // async create(userData: Partial<User>) {
+  //   const user = this.userRepo.create(userData);
+  //   return this.userRepo.save(user);
+  // }
 
-  async rejectUser(id: number) {
-    const user = await this.userRepo.findOneBy({ id });
-    if (!user) throw new NotFoundException('User not found');
-    return this.userRepo.remove(user);
-  }
+  // Other user-related operations can be added here (e.g., update profile)
 }
