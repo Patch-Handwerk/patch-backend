@@ -12,12 +12,12 @@ export class AdminService {
 
   // Returns all users that are pending approval (isApproved false)
   async getPendingUsers() {
-    return this.userRepo.find({ where: { isApproved: false } });
+    return this.userRepo.find({ where: { user_status: 0 } });
   }
 
   // Approves a user by setting isApproved to true
   async approveUser(id: number) {
-    const result = await this.userRepo.update(id, { isApproved: true });
+    const result = await this.userRepo.update(id, { user_status: 1 });
     if (result.affected === 0) throw new NotFoundException('User not found');
     return { message: 'User approved' };
   }

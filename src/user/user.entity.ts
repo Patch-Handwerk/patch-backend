@@ -18,6 +18,6 @@ export class User {
   @Column({ nullable: true })
 role: string;
 
-  @Column({ default: false })
-  isApproved: boolean;
+  @Column({ default: 0 })
+  user_status: number;
 }

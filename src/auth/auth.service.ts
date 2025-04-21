@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/user.entity';
@@ -17,10 +17,14 @@ export class AuthService {
     
     async register(dto: RegisterDto) {
         const hashed = await bcrypt.hash(dto.password, 10);
+        const userCheck = await this.userRepo.findOne({ where: { email: dto.email } });
+        if(userCheck) {
+            throw new HttpException('user already exist', HttpStatus.BAD_REQUEST); ;
+        }
 
         const user = await this.userRepo.create({...dto, password:hashed})
 
-        return this.userRepo.save(user);
+        return this.userRepo.save(user);//user created successfully mesage not whole object
     }
 
     async login(dto:LoginDto){///have issues with user.pass because it is not fetch in user
@@ -29,7 +33,7 @@ export class AuthService {
         if(!user || !(await bcrypt.compare(dto.password, user.password))){
             throw new UnauthorizedException('Invalid credentials');
         }
-        if (!user.isApproved) {
+        if (user.user_status == 0) {
             throw new UnauthorizedException('User not approved by admin');
           }
 
