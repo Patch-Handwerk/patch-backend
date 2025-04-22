@@ -1,27 +1,34 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { ConfigModule, ConfigService } from '@nestjs/config';           
+import { TypeOrmModule } from '@nestjs/typeorm';                    
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres', // your DB username
-      password: 'hellosql123', // your DB password
-      database: 'patch_db', // your DB name
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true, // only in dev
+    // 1. Load .env and make ConfigService global
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    // 2. Configure TypeORM based on environment variables
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject:  [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type:       'postgres',
+        host:       config.get<string>('DB_HOST'),
+        port:       config.get<number>('DB_PORT'),
+        username:   config.get<string>('DB_USERNAME'),
+        password:   config.get<string>('DB_PASSWORD'),
+        database:   config.get<string>('DB_NAME'),
+        entities:   [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: config.get<boolean>('TYPEORM_SYNC'),
+      }),
     }),
     UserModule,
     AuthModule,
-    AdminModule
-    
+    AdminModule,
   ],
 })
 export class AppModule {}
