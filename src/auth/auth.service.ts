@@ -17,29 +17,40 @@ export class AuthService {
     
     async register(dto: RegisterDto) {
         const hashed = await bcrypt.hash(dto.password, 10);
-        const userCheck = await this.userRepo.findOne({ where: { email: dto.email } });
-        if(userCheck) {
+        const userExist = await this.userRepo.findOne({ where: { email: dto.email } });
+        if(userExist) {
             throw new HttpException('user already exist', HttpStatus.BAD_REQUEST); ;
         }
 
         const user = await this.userRepo.create({...dto, password:hashed})
+        
+        this.userRepo.save(user);
 
-        return this.userRepo.save(user);//user created successfully mesage not whole object
+        throw new HttpException('User created successfully', HttpStatus.CREATED) ;
     }
 
-    async login(dto:LoginDto){///have issues with user.pass because it is not fetch in user
+    async login(dto:LoginDto){
+
+        //Check if the user exist or not in our database
         const user = await this.userRepo.findOne({ where: { email: dto.email } });
 
+        //If user exist then here compare both user email and password, or if not in our db then throw an error
         if(!user || !(await bcrypt.compare(dto.password, user.password))){
             throw new UnauthorizedException('Invalid credentials');
         }
+
+        // If admin approve the request then this user_status will change it to 1 and then easily login.
         if (user.user_status == 0) {
             throw new UnauthorizedException('User not approved by admin');
           }
 
+        //Payload and token genearation here and then return to client
         const payload = {id: user.id, role:user.role}
-        const token = this.jwtService.sign(payload);
-
-        return{accessToken: token, user};
+        const token = this.jwtService.sign({payload});
+        return {
+            status: 'success',
+            message: "User logged in successfully",
+            token
+        }
     }
 }

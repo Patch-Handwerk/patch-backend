@@ -12,7 +12,8 @@ export class AdminService {
 
   // Returns all users that are pending approval (isApproved false)
   async getPendingUsers() {
-    return this.userRepo.find({ where: { user_status: 0 } });
+     const getUser = this.userRepo.find({ where: { user_status: 0 } });
+     return getUser;
   }
 
   // Approves a user by setting isApproved to true

@@ -12,14 +12,14 @@ export class AuthController {
     @ApiOperation({summary:'Register a new user'})
     @ApiResponse({status:201, description:'User registered successfully.'})
     @Post('register')
-    register(@Body() dto:RegisterDto){
+     async register(@Body() dto:RegisterDto){
         return this.authService.register(dto);
     }
 
     @ApiOperation({summary:'Login a user'})
-    @ApiResponse({status:201, description:'Login registered successfully.'})
+    @ApiResponse({status:200, description:'Login registered successfully.'})
     @Post('login')
-    login(@Body() dto:LoginDto){
+    async login(@Body() dto:LoginDto){
         return this.authService.login(dto);
     }
 }
