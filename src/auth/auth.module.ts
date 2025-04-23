@@ -6,10 +6,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { User } from '../user/user.entity';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
+    EmailModule,
     // 2. Configure JwtModule asynchronously using env vars
     JwtModule.registerAsync({
       imports: [ConfigModule],                                    

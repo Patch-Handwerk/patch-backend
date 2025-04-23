@@ -16,8 +16,14 @@ export class User {
   password: string;
   
   @Column({ nullable: true })
-role: string;
+  role: string;
 
   @Column({ default: 0 })
   user_status: number;
+
+  @Column({type: 'varchar', nullable: true })
+  resetToken: string | null;                               
+
+  @Column({ type: 'timestamp', nullable: true })
+  resetTokenExpiry: Date | null;   
 }
