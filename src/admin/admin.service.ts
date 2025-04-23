@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
@@ -12,7 +12,7 @@ export class AdminService {
 
   // Returns all users that are pending approval (isApproved false)
   async getPendingUsers() {
-     const getUser = this.userRepo.find({ where: { user_status: 0 } });
+     const getUser = await this.userRepo.find({ where: { user_status: 0 } });
      return getUser;
   }
 
