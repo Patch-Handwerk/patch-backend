@@ -21,9 +21,20 @@ export class User {
   @Column({ default: 0 })
   user_status: number;
 
+  // Add user entity for reset token module 
   @Column({type: 'varchar', nullable: true })
   resetToken: string | null;                               
 
   @Column({ type: 'timestamp', nullable: true })
   resetTokenExpiry: Date | null;   
+
+  // Add user entity for verify email module
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  verificationToken: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  verificationTokenExpiry: Date | null;
 }
