@@ -17,6 +17,7 @@ import * as crypto from 'crypto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { EmailService } from 'src/email/email.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly userDb: Repository<User>,
     private readonly jwtService: JwtService,
     private emailService: EmailService,
+    private configService: ConfigService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -79,13 +81,28 @@ export class AuthService {
       throw new UnauthorizedException('Awaiting admin approval');
     }
 
-    //Payload and token genearation here and then return to client
+    //Payload and tokens genearation (access and refresh) and then return to client
     const payload = { id: user.id, role: user.role };
-    const token = this.jwtService.sign({ payload });
+
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(
+      payload,
+      {
+        secret:     this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+        expiresIn:  this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
+      }
+    )
+
+      // 3) Hash & store refresh token in DB
+      const hashed = await bcrypt.hash(refreshToken, 10);
+      await this.userDb.update(user.id, { refreshToken: hashed });
+
+
     return {
       status: 'success',
       message: 'User logged in successfully',
-      token,
+      accessToken,
+      refreshToken
     };
   }
   async forgotPassword(dto: ForgotPasswordDto) {
@@ -140,5 +157,50 @@ export class AuthService {
     await this.userDb.save(user);
 
     return { message: 'Email successfully verified' };
+  }
+
+  async refresh(refreshToken: string) {
+    console.log(refreshToken,'refresCHeck')
+    try {
+      // 1) Verify the refresh token signature & expiry
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+      });
+
+      console.log(payload,'checkPayload')
+
+      // 2) Find the user and ensure they have a stored (hashed) refresh token
+      const user = await this.userDb.findOne({ where: { id: payload.id } });
+      if (!user || !user.refreshToken) {
+        throw new UnauthorizedException('Access Denied');
+      }
+
+      // 3) Compare the incoming token to the hashed one in DB
+      const isMatch = await bcrypt.compare(refreshToken, user.refreshToken);
+      console.log(isMatch,"isMatch")
+      if (!isMatch) {
+        throw new UnauthorizedException('Access Denied');
+      }
+
+      // 4) Generate a new pair of tokens
+      const newPayload = { id: user.id, role: user.role };
+      const newAccessToken = this.jwtService.sign(newPayload);
+      const newRefreshToken = this.jwtService.sign(newPayload, {
+        secret:    this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
+      });
+
+      // 5) Hash & store the new refresh token
+      const hashed = await bcrypt.hash(newRefreshToken, 10);
+      await this.userDb.update(user.id, { refreshToken: hashed });
+
+      // 6) Return freshly minted tokens
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch (e) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }
