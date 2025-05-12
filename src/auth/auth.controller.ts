@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards,Req,Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,6 +7,9 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtRefreshGuard } from 'src/guards/jwt-refresh.guard';
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
+import { Response, Request } from 'express';
+import { RequestWithUser } from 'src/config/types/RequestWithUser';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -47,5 +50,20 @@ export class AuthController {
   @Post('refresh')
   async refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto.refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(
+    @Req() req: RequestWithUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // 1) Clear the refresh_token cookie on the client
+    res.clearCookie('refresh_token', { path: '/auth/refresh' });
+
+    // 2) Remove refreshToken from the database
+    await this.authService.logout(req.user.id);
+
+    return { message: 'Logged out successfully' };
   }
 }

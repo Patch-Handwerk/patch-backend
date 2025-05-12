@@ -12,25 +12,25 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: true })
+  @Column()
   password: string;
 
-  @Column({ nullable: true })
+  @Column()// 'consultant' | 'craftsman' | 'admin'
   role: string;
 
-  @Column({ default: 0 })
+  @Column({ default: 0 })// 0 = pending, 1 = approved
   user_status: number;
 
-  // Add user entity for reset token module
+  // Add user entity for RESET TOKEN module
   @Column({ type: 'varchar', nullable: true })
   resetToken: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
   resetTokenExpiry: Date | null;
 
-  // Add user entity for verify email module
+  // Add user entity for VERIFY EMAIL module
   @Column({ default: false })
-  isVerified: boolean;
+  isVerified: boolean;// email confirmed?
 
   @Column({ type: 'varchar', nullable: true })
   verificationToken: string | null;
@@ -38,7 +38,7 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   verificationTokenExpiry: Date | null;
 
-  //Add entity for refresh token
-  @Column({ nullable: true })
-  refreshToken: string;
+  //Add user entity for REFRESH TOKEN module
+  @Column({ type:'text', nullable: true })
+  refreshToken: string | null;
 }

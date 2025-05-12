@@ -203,4 +203,9 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
+  async logout(userId: number) {
+    console.log(userId, 'userId');
+    await this.userDb.update(userId, { refreshToken: null });
+    return { message: 'Logged out successfully' };
+  }
 }
