@@ -11,10 +11,11 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey:    config.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+      // ignoreExpiration: false,
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: any) {  
     return { id: payload.id, role: payload.role };
   }
 }
