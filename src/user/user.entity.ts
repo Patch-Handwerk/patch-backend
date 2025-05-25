@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { Role } from './role.enum';
+import { Role } from './enums/role.enum';
+import { UserStatus } from './enums/user.status.enum';
 
 @Entity()
 export class User {
@@ -15,11 +16,11 @@ export class User {
   @Column()
   password: string;
 
-  @Column()// 'consultant' | 'craftsman' | 'admin'
-  role: string;
+  @Column({ type: 'enum', enum: Role, default: Role.CONSULTANT, })
+  role: Role;
 
-  @Column({ default: 0 })// 0 = pending, 1 = approved
-  user_status: number;
+  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.PENDING })
+  user_status: UserStatus;
 
   // Add user entity for RESET TOKEN module
   @Column({ type: 'varchar', nullable: true })
@@ -30,7 +31,7 @@ export class User {
 
   // Add user entity for VERIFY EMAIL module
   @Column({ default: false })
-  isVerified: boolean;// email confirmed?
+  isVerified: boolean; // email confirmed?
 
   @Column({ type: 'varchar', nullable: true })
   verificationToken: string | null;
@@ -39,6 +40,6 @@ export class User {
   verificationTokenExpiry: Date | null;
 
   //Add user entity for REFRESH TOKEN module
-  @Column({ type:'text', nullable: true })
+  @Column({ type: 'text', nullable: true })
   refreshToken: string | null;
 }
