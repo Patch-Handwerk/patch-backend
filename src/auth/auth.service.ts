@@ -18,6 +18,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { EmailService } from 'src/email/email.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ConfigService } from '@nestjs/config';
+import { UserStatus } from 'src/user/enums/user.status.enum';
 
 @Injectable()
 export class AuthService {
@@ -76,7 +77,7 @@ export class AuthService {
     if (!user.isVerified) {
       throw new UnauthorizedException('Email not verified');
     }
-    if (user.user_status === 0) {
+    if (user.user_status === UserStatus.PENDING) {
       // admin approval flag
       throw new UnauthorizedException('Awaiting admin approval');
     }

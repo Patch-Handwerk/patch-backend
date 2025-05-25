@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Param, UseGuards } from '@nestjs/common';
-import { Role } from 'src/user/role.enum';
+import { Role } from 'src/user/enums/role.enum';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 import { Roles } from 'src/decorators/roles.decorator';
@@ -11,19 +11,19 @@ export class AdminController {
   constructor(private adminService: AdminService) {}
 
   @Get('pending')
-  @Roles(Role.Admin)
+  @Roles(Role.ADMIN)
   getPendingUsers() {
     return this.adminService.getPendingUsers();
   }
 
   @Patch('approve/:id')
-  @Roles(Role.Admin)
+  @Roles(Role.ADMIN)
   approveUser(@Param('id') id: number) {
     return this.adminService.approveUser(+id);
   }
 
   @Patch('reject/:id')
-  @Roles(Role.Admin)
+  @Roles(Role.ADMIN)
   rejectUser(@Param('id') id: number) {
     return this.adminService.rejectUser(+id);
   }
