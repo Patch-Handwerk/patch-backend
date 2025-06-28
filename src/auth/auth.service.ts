@@ -19,6 +19,7 @@ import { EmailService } from 'src/email/email.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserStatus } from 'src/user/enums/user.status.enum';
+import { Role } from 'src/user/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -65,24 +66,51 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    //Check if the user exist or not in our database
-    const user = await this.userDb.findOne({ where: { email: dto.email } });
+    // Define admin email (and optionally password) from env
+      const adminName = this.configService.get<string>('ADMIN_NAME');
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+    const adminPassword = this.configService.get<any>('ADMIN_PASSWORD');
 
-    //If user exist then here compare both user email and password, or if not in our db then throw an error
-    if (!user || !(await bcrypt.compare(dto.password, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
+    let user = await this.userDb.findOne({ where: { email: dto.email } });
+
+    // If admin tries to login and does not exist, create admin user on the fly
+    if (dto.email === adminEmail) {
+      if (!user) {
+        const hashed = await bcrypt.hash(adminPassword, 10);
+        user = this.userDb.create({
+          name: adminName,
+          email: adminEmail,
+          password: hashed,
+          role: Role.ADMIN,
+          isVerified: true,
+          user_status: UserStatus.APPROVED,
+        });
+        await this.userDb.save(user);
+         // Fetch the user again from DB to ensure all fields are present
+      user = await this.userDb.findOne({ where: { email: adminEmail } });
+      }
+      // Compare password
+      if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      // Admin skips all checks
+    } else {
+      // Normal user login flow
+      if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      if (!user.isVerified) {
+        throw new UnauthorizedException('Email not verified');
+      }
+      if (user.user_status === UserStatus.PENDING) {
+        throw new UnauthorizedException('Awaiting admin approval');
+      }
+      if (user.user_status === UserStatus.REJECTED) {
+        throw new UnauthorizedException('Admin Rejected this user already');
+      }
     }
 
-    // If admin approve the request then this user_status will change it to 1 and then easily login.
-    if (!user.isVerified) {
-      throw new UnauthorizedException('Email not verified');
-    }
-    if (user.user_status === UserStatus.PENDING) {
-      // admin approval flag
-      throw new UnauthorizedException('Awaiting admin approval');
-    }
-
-    //Payload and tokens genearation (access and refresh) and then return to client
+    //Payload and tokens generation (access and refresh) and then return to client
     const payload = { id: user.id, role: user.role };
 
     const accessToken = this.jwtService.sign(payload);
@@ -91,7 +119,7 @@ export class AuthService {
       expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
     });
 
-    // 3) Hash & store refresh token in DB
+    // Hash & store refresh token in DB
     const hashed = await bcrypt.hash(refreshToken, 10);
     await this.userDb.update(user.id, { refreshToken: hashed });
 
@@ -107,7 +135,6 @@ export class AuthService {
       return remainingFields;
     }
 
-    // Usage
     const publicUser = getUserDetails(user);
 
     return {
