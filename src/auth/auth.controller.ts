@@ -24,34 +24,49 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Login a user' })
-  @ApiResponse({ status: 200, description: 'Login registered successfully.' })
+  @ApiResponse({ status: 200, description: 'Login successfully.' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials.' })
   @Post('login')
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
+  @ApiOperation({ summary: 'Request password reset email' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
 
+  @ApiOperation({ summary: 'Reset password using token' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
 
+  @ApiOperation({ summary: 'Verify user email' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string) {
     return this.authService.verifyEmail(token);
     // return res.redirect('https://your-frontend.com/verified-success'); will add in the end after success modal created
   }
 
+  @ApiOperation({ summary: 'Refresh JWT tokens' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully.' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token.' })
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   async refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto.refreshToken);
   }
 
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully.' })
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(
