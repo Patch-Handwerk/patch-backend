@@ -18,8 +18,8 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { EmailService } from 'src/email/email.service';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ConfigService } from '@nestjs/config';
-import { UserStatus } from 'src/user/enums/user.status.enum';
-import { Role } from 'src/user/enums/role.enum';
+import { UserStatus } from 'src/admin/enums/user.status.enum';
+import { Role } from 'src/admin/enums/role.enum';
 
 @Injectable()
 export class AuthService {

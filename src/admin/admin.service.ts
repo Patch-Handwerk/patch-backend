@@ -1,33 +1,36 @@
-import {Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserStatus } from 'src/user/enums/user.status.enum';
-import { User } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
+import { User } from 'src/user/user.entity';
+import { GetUsersDto } from './dtos/get-users.dto';
+import { UpdateUserStatusDto } from './dtos/update-user-status.dto';
+import { UserStatus } from 'src/admin/enums/user.status.enum';
+import { Role } from 'src/admin/enums/role.enum';
 
 @Injectable()
 export class AdminService {
   constructor(
     @InjectRepository(User)
-    private userRepo: Repository<User>,
+    private readonly userRepository: Repository<User>,
   ) {}
 
-  // Returns all users that are pending approval (isApproved false)
-  async getPendingUsers() {
-     const getUser = await this.userRepo.find({ where: {isVerified:true, user_status: UserStatus.PENDING } });
-     return getUser;
+  async getUsers(filter: GetUsersDto): Promise<User[]> {
+    const { role, user_status } = filter;
+    const query = this.userRepository.createQueryBuilder('user');
+
+    if (role) query.andWhere('user.role = :role', { role });
+    if (user_status !== undefined)
+      query.andWhere('user.user_status = :user_status', { user_status });
+
+    return query.getMany();
   }
 
-  // Approves a user by setting isApproved to true
-  async approveUser(id: number) {
-    const result = await this.userRepo.update(id, { user_status: UserStatus.APPROVED });
-    if (result.affected === 0) throw new NotFoundException('User not found');
-    return { message: 'User approved' };
-  }
+  async updateUserStatus(id: number, statusDto: UpdateUserStatusDto): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
 
-  // Rejects a user by deleting them from the database
-  async rejectUser(id: number) {
-    const result = await this.userRepo.delete(id);
-    if (result.affected === 0) throw new NotFoundException('User not found');
-    return { message: 'User rejected and removed' };
+    user.user_status = statusDto.user_status;
+    return this.userRepository.save(user);
   }
 }
+
