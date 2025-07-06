@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';           
 import { TypeOrmModule } from '@nestjs/typeorm';     
-import { AuthModule } from './auth/auth.module';
-import { AdminModule } from './admin/admin.module';
-import { EmailModule } from './email/email.module';
+import { AdminModule, AuthModule, EmailModule, User } from './modules';
 
 @Module({
   imports: [
