@@ -6,8 +6,8 @@ import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { JwtRefreshGuard } from 'src/guards/jwt-refresh.guard';
-import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
+import { JwtRefreshGuard } from 'src/common/guards/jwt-refresh.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { Response, Request } from 'express';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
 
