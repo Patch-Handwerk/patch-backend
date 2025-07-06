@@ -10,8 +10,7 @@ import {
 } from '@nestjs/common';
 import { UpdateUserStatusDto } from './dtos/update-user-status.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Roles } from 'src/decorators/roles.decorator';
-import { RolesGuard } from 'src/guards/roles.guards';
+import { RolesGuard } from 'src/common/guards/roles.guards';
 import { GetUsersDto } from './dtos/get-users.dto';
 import { AdminService } from './admin.service';
 import { Role } from 'src/admin/enums/role.enum';
@@ -24,6 +23,7 @@ import {
   ApiParam,
   ApiBody,
 } from '@nestjs/swagger';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @ApiTags('admin')
 @ApiBearerAuth()
