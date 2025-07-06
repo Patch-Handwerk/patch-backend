@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
   const config = new DocumentBuilder()
   .setTitle('Patch APIs')
   .setDescription('Api Documentation for the authentication and authorization system')
@@ -14,7 +15,7 @@ async function bootstrap() {
  
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('api-docs', app, document); 
+  SwaggerModule.setup('api', app, document); 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted:true,
