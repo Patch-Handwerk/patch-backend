@@ -13,9 +13,14 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from 'src/modules/email';
-import { LoginDto,RegisterDto,ForgotPasswordDto,ResetPasswordDto } from '../dto';
+import {
+  LoginDto,
+  RegisterDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from '../dto';
 import { User } from 'src/modules/user';
-import { UserStatus,Role } from 'src/modules/admin/enums';
+import { UserStatus, Role } from 'src/modules/admin/enums';
 
 @Injectable()
 export class AuthService {
@@ -63,7 +68,7 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     // Define admin email (and optionally password) from env
-      const adminName = this.configService.get<string>('ADMIN_NAME');
+    const adminName = this.configService.get<string>('ADMIN_NAME');
     const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
     const adminPassword = this.configService.get<any>('ADMIN_PASSWORD');
 
@@ -71,6 +76,10 @@ export class AuthService {
 
     // If admin tries to login and does not exist, create admin user on the fly
     if (dto.email === adminEmail) {
+      // Always check password against .env admin password
+      if (dto.password !== adminPassword) {
+        throw new UnauthorizedException('Invalid admin credentials');
+      }
       if (!user) {
         const hashed = await bcrypt.hash(adminPassword, 10);
         user = this.userDb.create({
@@ -82,11 +91,11 @@ export class AuthService {
           user_status: UserStatus.APPROVED,
         });
         await this.userDb.save(user);
-         // Fetch the user again from DB to ensure all fields are present
-      user = await this.userDb.findOne({ where: { email: adminEmail } });
+        // Fetch the user again from DB to ensure all fields are present
+        user = await this.userDb.findOne({ where: { email: adminEmail } });
       }
       // Compare password
-      if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+      if (!user) {
         throw new UnauthorizedException('Invalid credentials');
       }
       // Admin skips all checks
