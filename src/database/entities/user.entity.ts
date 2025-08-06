@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { Role,UserStatus } from '../admin/enums';
+import { Role,UserStatus } from '../../modules/admin/enums';
 
-@Entity()
+@Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -23,22 +23,25 @@ export class User {
 
   // Add user entity for RESET TOKEN module
   @Column({ type: 'varchar', nullable: true })
-  resetToken: string | null;
+  reset_token: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  resetTokenExpiry: Date | null;
+  reset_token_expiry: Date | null;
 
   // Add user entity for VERIFY EMAIL module
   @Column({ default: false })
-  isVerified: boolean; // email confirmed?
+  is_verified: boolean; // email confirmed?
 
   @Column({ type: 'varchar', nullable: true })
-  verificationToken: string | null;
+  verification_token: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  verificationTokenExpiry: Date | null;
+  verification_token_expiry: Date | null;
 
   //Add user entity for REFRESH TOKEN module
   @Column({ type: 'text', nullable: true })
-  refreshToken: string | null;
+  refresh_token: string | null;
+
+  @Column({ type: 'int', generated: 'increment', unique: true })
+  tenant_id: number;
 }

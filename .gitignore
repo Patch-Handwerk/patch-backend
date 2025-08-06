@@ -3,7 +3,7 @@
 /node_modules
 /build
 .env
-note.txt
+README.md
 
 # Logs
 logs
