@@ -19,7 +19,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
 } from '../dto';
-import { User } from 'src/modules/user';
+import { User } from 'src/database/entities';
 import { UserStatus, Role } from 'src/modules/admin/enums';
 
 @Injectable()
@@ -47,17 +47,17 @@ export class AuthService {
     const user = await this.userDb.create({ ...dto, password: hashed });
 
     // 4) generate a one-time verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const verificationTokenExpiry = new Date(Date.now() + 24 * 3600_000); // 24h from now
+    const verification_token = crypto.randomBytes(32).toString('hex');
+    const verification_token_expiry = new Date(Date.now() + 24 * 3600_000); // 24h from now
 
-    user.verificationToken = verificationToken;
-    user.verificationTokenExpiry = verificationTokenExpiry;
+    user.verification_token = verification_token;
+    user.verification_token_expiry = verification_token_expiry;
 
     // 5) save the user (with token + expiry)
     await this.userDb.save(user);
 
     // 6) send the “verify your email” link
-    await this.emailService.sendVerificationLink(user.email, verificationToken);
+    await this.emailService.sendVerificationLink(user.email, verification_token);
 
     // 7) respond with created and check email to verify
     throw new HttpException(
@@ -87,7 +87,7 @@ export class AuthService {
           email: adminEmail,
           password: hashed,
           role: Role.ADMIN,
-          isVerified: true,
+          is_verified: true,
           user_status: UserStatus.APPROVED,
         });
         await this.userDb.save(user);
@@ -104,7 +104,7 @@ export class AuthService {
       if (!user || !(await bcrypt.compare(dto.password, user.password))) {
         throw new UnauthorizedException('Invalid credentials');
       }
-      if (!user.isVerified) {
+      if (!user.is_verified) {
         throw new UnauthorizedException('Email not verified');
       }
       if (user.user_status === UserStatus.PENDING) {
@@ -119,22 +119,22 @@ export class AuthService {
     const payload = { id: user.id, role: user.role };
 
     const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
+    const refresh_token = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
       expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
     });
 
     // Hash & store refresh token in DB
-    const hashed = await bcrypt.hash(refreshToken, 10);
-    await this.userDb.update(user.id, { refreshToken: hashed });
+    const hashed = await bcrypt.hash(refresh_token, 10);
+    await this.userDb.update(user.id, { refresh_token: hashed });
 
     function getUserDetails(user: any) {
       const {
         password,
         accessToken,
-        refreshToken,
-        resetToken,
-        verificationToken,
+        refresh_token,
+        reset_token,
+        verification_token,
         ...remainingFields
       } = user;
       return remainingFields;
@@ -147,7 +147,7 @@ export class AuthService {
       message: 'User logged in successfully',
       publicUser,
       accessToken,
-      refreshToken,
+      refresh_token,
     };
   }
   async forgotPassword(dto: ForgotPasswordDto) {
@@ -158,57 +158,58 @@ export class AuthService {
       throw new NotFoundException('User doesnot exist');
     }
     //Generate reset token & reset expiry (1 hour)
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 3600_000);
+    const reset_token = crypto.randomBytes(32).toString('hex');
+    const reset_token_expiry = new Date(Date.now() + 3600_000);
 
-    findUser.resetToken = resetToken;
-    findUser.resetTokenExpiry = resetTokenExpiry;
+    findUser.reset_token = reset_token;
+    findUser.reset_token_expiry = reset_token_expiry;
     await this.userDb.save(findUser);
-    await this.emailService.sendResetLink(dto.email, findUser.resetToken);
+    await this.emailService.sendResetLink(dto.email, findUser.reset_token);
     return { message: 'Password reset link sent' };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
     const user = await this.userDb.findOne({
-      where: { resetToken: dto.token },
+      where: { reset_token: dto.token },
     });
-    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+    if (!user || !user.reset_token_expiry || user.reset_token_expiry < new Date()) {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
     user.password = await bcrypt.hash(dto.newPassword, 10);
-    user.resetToken = null;
-    user.resetTokenExpiry = null;
+    user.reset_token = null;
+    user.reset_token_expiry = null;
     await this.userDb.save(user);
 
     return { message: 'Password has been reset successfully' };
   }
 
   async verifyEmail(token: string) {
+    console.log(token, 'token');
     const user = await this.userDb.findOne({
-      where: { verificationToken: token },
+      where: { verification_token: token },
     });
     if (
       !user ||
-      !user.verificationTokenExpiry ||
-      user.verificationTokenExpiry < new Date()
+      !user.verification_token_expiry ||
+      user.verification_token_expiry < new Date()
     ) {
       throw new BadRequestException('Invalid or expired verification token');
     }
 
-    user.isVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpiry = null;
+    user.is_verified = true;
+    user.verification_token = null;
+    user.verification_token_expiry = null;
     await this.userDb.save(user);
 
     return { message: 'Email successfully verified' };
   }
 
-  async refresh(refreshToken: string) {
-    console.log(refreshToken, 'refresCHeck');
+  async refresh(refresh_token: string) {
+    console.log(refresh_token, 'refresCHeck');
     try {
       // 1) Verify the refresh token signature & expiry
-      const payload = this.jwtService.verify(refreshToken, {
+      const payload = this.jwtService.verify(refresh_token, {
         secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
       });
 
@@ -216,12 +217,12 @@ export class AuthService {
 
       // 2) Find the user and ensure they have a stored (hashed) refresh token
       const user = await this.userDb.findOne({ where: { id: payload.id } });
-      if (!user || !user.refreshToken) {
+      if (!user || !user.refresh_token) {
         throw new UnauthorizedException('Access Denied');
       }
 
       // 3) Compare the incoming token to the hashed one in DB
-      const isMatch = await bcrypt.compare(refreshToken, user.refreshToken);
+      const isMatch = await bcrypt.compare(refresh_token, user.refresh_token);
       console.log(isMatch, 'isMatch');
       if (!isMatch) {
         throw new UnauthorizedException('Access Denied');
@@ -230,7 +231,7 @@ export class AuthService {
       // 4) Generate a new pair of tokens
       const newPayload = { id: user.id, role: user.role };
       const newAccessToken = this.jwtService.sign(newPayload);
-      const newRefreshToken = this.jwtService.sign(newPayload, {
+      const newrefresh_token = this.jwtService.sign(newPayload, {
         secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
         expiresIn: this.configService.get<string>(
           'JWT_REFRESH_TOKEN_EXPIRATION',
@@ -238,13 +239,13 @@ export class AuthService {
       });
 
       // 5) Hash & store the new refresh token
-      const hashed = await bcrypt.hash(newRefreshToken, 10);
-      await this.userDb.update(user.id, { refreshToken: hashed });
+      const hashed = await bcrypt.hash(newrefresh_token, 10);
+      await this.userDb.update(user.id, { refresh_token: hashed });
 
       // 6) Return freshly minted tokens
       return {
         accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
+        refresh_token: newrefresh_token,
       };
     } catch (e) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -252,7 +253,7 @@ export class AuthService {
   }
   async logout(userId: number) {
     console.log(userId, 'userId');
-    await this.userDb.update(userId, { refreshToken: null });
+    await this.userDb.update(userId, { refresh_token: null });
     return { message: 'Logged out successfully' };
   }
 }

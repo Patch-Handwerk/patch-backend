@@ -4,11 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminModule, AuthModule, EmailModule, User } from './modules';
 import {
   AppConfifuration,
-  DatabaseConfiguration,
   EmailConfiguration,
   AdminConfiguration,
   JwtConfiguration,
 } from './config';
+import { EvaluationModule } from './modules/evaluation/evaluation.module';
 
 @Module({
   imports: [
@@ -17,7 +17,6 @@ import {
       isGlobal: true,
       load: [
         AppConfifuration,
-        DatabaseConfiguration,
         AdminConfiguration,
         JwtConfiguration,
         EmailConfiguration,
@@ -41,6 +40,7 @@ import {
     AuthModule,
     AdminModule,
     EmailModule,
+    EvaluationModule,
   ],
 })
 export class AppModule {}
