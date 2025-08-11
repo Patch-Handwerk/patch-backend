@@ -1,14 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Phase } from 'src/database/entities/phase.entity';
 import { SubPhase } from 'src/database/entities/sub_phase.entity';
-import { ClientEvaluationQuestion } from 'src/database/entities/client_evaluation_question.entity';
-import { ClientEvaluationAnswer } from 'src/database/entities/client_evaluation_answer.entity';
-import { ClientAnswer } from '../../../database/entities/client_answer.entity';
+import { Question } from 'src/database/entities/questions.entity';
+import { Answer } from 'src/database/entities/answers.entity';
+import { Results } from '../../../database/entities/results.entity';
 import { Stage } from 'src/database/entities/stage.entity';
 import { User } from 'src/database/entities/user.entity';
 import { CalculateProgressDto } from '../dto/calculate-progress.dto';
+import { HttpException } from '@nestjs/common';
 
 @Injectable()
 export class ClientEvaluationService {
@@ -17,12 +18,12 @@ export class ClientEvaluationService {
     private phaseRepo: Repository<Phase>,
     @InjectRepository(SubPhase)
     private subPhaseRepo: Repository<SubPhase>,
-    @InjectRepository(ClientEvaluationQuestion)
-    private questionRepo: Repository<ClientEvaluationQuestion>,
-    @InjectRepository(ClientEvaluationAnswer)
-    private answerRepo: Repository<ClientEvaluationAnswer>,
-    @InjectRepository(ClientAnswer)
-    private clientAnswerRepo: Repository<ClientAnswer>,
+    @InjectRepository(Question)
+    private questionRepo: Repository<Question>,
+    @InjectRepository(Answer)
+    private answerRepo: Repository<Answer>,
+    @InjectRepository(Results)
+    private resultsRepo: Repository<Results>,
     @InjectRepository(Stage)
     private stageRepo: Repository<Stage>,
     @InjectRepository(User)
@@ -33,6 +34,21 @@ export class ClientEvaluationService {
   async progressCalculation(calculateData: CalculateProgressDto) {
     try {
       const { tenantId, phaseName, subphaseName, questionId, questionText, selectedAnswers } = calculateData;
+
+      // Validate input data
+      if (!selectedAnswers || selectedAnswers.length === 0) {
+        throw new BadRequestException('At least one answer must be selected');
+      }
+
+      if (!tenantId || !phaseName || !subphaseName || !questionId) {
+        throw new BadRequestException('Missing required fields: tenantId, phaseName, subphaseName, questionId');
+      }
+
+      // Verify user exists
+      const user = await this.userRepo.findOne({ where: { id: tenantId } });
+      if (!user) {
+        throw new NotFoundException(`User with ID ${tenantId} not found`);
+      }
 
       console.log(calculateData);
       // Calculate total points
@@ -112,7 +128,7 @@ export class ClientEvaluationService {
       }
 
       // Save to database
-      const clientAnswer = this.clientAnswerRepo.create({
+      const result = this.resultsRepo.create({
         tenant_id: tenantId,
         phase_name: phaseName,
         subphase_name: subphaseName,
@@ -126,7 +142,7 @@ export class ClientEvaluationService {
         created_at: new Date()
       });
 
-      await this.clientAnswerRepo.save(clientAnswer);
+      await this.resultsRepo.save(result);
 
       return {
         message: 'Progress calculated successfully',
@@ -138,7 +154,20 @@ export class ClientEvaluationService {
       };
 
     } catch (error) {
-      throw new Error(`Failed to calculate progress: ${error.message}`);
+      // Re-throw HTTP exceptions as they are
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      
+      // Log the error for debugging
+      console.error('Progress calculation error:', error);
+      
+      // Throw appropriate HTTP exception
+      if (error.code === 'ER_NO_SUCH_TABLE' || error.code === 'ER_ACCESS_DENIED_ERROR') {
+        throw new InternalServerErrorException('Database connection error');
+      }
+      
+      throw new InternalServerErrorException('Failed to calculate progress');
     }
   }
 }

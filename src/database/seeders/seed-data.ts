@@ -48,7 +48,7 @@ export const phasesData: PhaseData[] = [
               stage: "Digi Apprentice",
               description: "Analog Procurement",
               answers: [
-                { text: "Keine zentrale Dokumentation, keine digitale Nachverfolgung", point: 1, isStopAnswer: true },
+                { text: "this answer is not correct", point: 1, isStopAnswer: true },
                 { text: "Bestellungen erfolgen telefonisch oder persönlich beim Lieferanten", point: 3 },
                 { text: "Materialbedarfe werden händisch aufgelistet (Papier, Whiteboard, Notizbuch)", point: 6 },
               ]

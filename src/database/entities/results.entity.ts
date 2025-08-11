@@ -1,15 +1,15 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column } from 'typeorm';
-import { ClientEvaluationAnswer } from './client_evaluation_answer.entity';
+import { Answer } from './answers.entity';
 import { User } from './user.entity';
 
-@Entity('client_answers')
-export class ClientAnswer {
+@Entity('results')
+export class Results {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => ClientEvaluationAnswer)
+  @ManyToOne(() => Answer)
   @JoinColumn({ name: 'answer_id' })
-  answer: ClientEvaluationAnswer;
+  answer: Answer;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'tenant_id' })

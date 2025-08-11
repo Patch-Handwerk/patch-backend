@@ -1,8 +1,8 @@
 import { DataSource } from "typeorm";
 import { Phase } from "../entities/phase.entity";
 import { SubPhase } from "../entities/sub_phase.entity";
-import { ClientEvaluationQuestion } from "../entities/client_evaluation_question.entity";
-import { ClientEvaluationAnswer } from "../entities/client_evaluation_answer.entity";
+import { Question } from "../entities/questions.entity";
+import { Answer } from "../entities/answers.entity";
 import { Stage } from "../entities/stage.entity";
 import { phasesData, stagesData } from "./seed-data";
 
@@ -10,8 +10,8 @@ export default class InitialSurveyDataSeeder {
   async run(dataSource: DataSource): Promise<void> {
     const phaseRepo = dataSource.getRepository(Phase);
     const subPhaseRepo = dataSource.getRepository(SubPhase);
-    const questionRepo = dataSource.getRepository(ClientEvaluationQuestion);
-    const answerRepo = dataSource.getRepository(ClientEvaluationAnswer);
+    const questionRepo = dataSource.getRepository(Question);
+    const answerRepo = dataSource.getRepository(Answer);
     const stageRepo = dataSource.getRepository(Stage);
 
     // Helper function to get or create a phase
@@ -54,7 +54,7 @@ export default class InitialSurveyDataSeeder {
     // Helper function to get or create an answer with level, stage, and description
     const getOrCreateAnswer = async (
       answerText: string, 
-      question: ClientEvaluationQuestion, 
+      question: Question, 
       point: number, 
       level: number,
       stage: string,

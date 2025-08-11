@@ -7,6 +7,7 @@ import {
   EmailConfiguration,
   AdminConfiguration,
   JwtConfiguration,
+  RedisConfiguration,
 } from './config';
 import { EvaluationModule } from './modules/evaluation/evaluation.module';
 
@@ -20,6 +21,7 @@ import { EvaluationModule } from './modules/evaluation/evaluation.module';
         AdminConfiguration,
         JwtConfiguration,
         EmailConfiguration,
+        RedisConfiguration,
       ],
     }),
     // 2. Configure TypeORM based on environment variables
@@ -43,4 +45,4 @@ import { EvaluationModule } from './modules/evaluation/evaluation.module';
     EvaluationModule,
   ],
 })
-export class AppModule {}
+export class RootModule {}

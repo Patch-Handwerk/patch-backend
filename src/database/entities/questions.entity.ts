@@ -1,9 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, JoinColumn } from 'typeorm';
 import { SubPhase } from './sub_phase.entity';
-import { ClientEvaluationAnswer } from './client_evaluation_answer.entity';
+import { Answer } from './answers.entity';
 
-@Entity()
-export class ClientEvaluationQuestion {
+@Entity('questions')
+export class Question {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -17,6 +17,6 @@ export class ClientEvaluationQuestion {
   @JoinColumn({ name: 'sub_phase_id' })
   subPhase: SubPhase;
 
-  @OneToMany(() => ClientEvaluationAnswer, answer => answer.question)
-  answers: ClientEvaluationAnswer[];
+  @OneToMany(() => Answer, answer => answer.question)
+  answers: Answer[];
 }

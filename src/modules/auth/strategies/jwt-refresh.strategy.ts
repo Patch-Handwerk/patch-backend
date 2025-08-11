@@ -1,21 +1,25 @@
 // src/auth/jwt-refresh.strategy.ts
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, ExtractJwt } from 'passport-jwt';
+import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
-  constructor(config: ConfigService) {
+  constructor(private config: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey:    config.get<string>('JWT_REFRESH_TOKEN_SECRET'),
-      // ignoreExpiration: false,
+      secretOrKey: config.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+      ignoreExpiration: false,
     });
   }
 
-  async validate(payload: any) {  
+  async validate(payload: any) {
+    if (!payload || !payload.id) {
+      throw new UnauthorizedException('Invalid refresh token payload');
+    }
+    
     return { id: payload.id, role: payload.role };
   }
 }

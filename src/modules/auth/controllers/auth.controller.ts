@@ -4,7 +4,7 @@ import { Response, Request } from 'express';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
 import { LoginDto,RegisterDto, ForgotPasswordDto,RefreshTokenDto,ResetPasswordDto } from '../dto';
 import { AuthService } from '../services';
-import { JwtAuthGuard, JwtRefreshGuard } from 'src/common';
+import { JwtAuthGuard, JwtRefreshGuard, JwtBlacklistGuard } from 'src/common';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -62,17 +62,23 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logged out successfully.' })
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtBlacklistGuard)
   @Post('logout')
   async logout(
     @Req() req: RequestWithUser,
     @Res({ passthrough: true }) res: Response,
   ) {
+
+    console.log(req.user, 'req.user');
+    console.log(req, 'req');
+    // Extract the access token from the Authorization header
+    const accessToken = req.headers.authorization?.replace('Bearer ', '');
+    
     // 1) Clear the refresh_token cookie on the client
     res.clearCookie('refresh_token', { path: '/auth/refresh' });
 
-    // 2) Remove refreshToken from the database
-    await this.authService.logout(req.user.id);
+    // 2) Blacklist the access token and remove refreshToken from the database
+    await this.authService.logout(req.user.id, accessToken);
 
     return { message: 'Logged out successfully' };
   }

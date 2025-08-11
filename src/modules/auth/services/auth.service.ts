@@ -21,6 +21,7 @@ import {
 } from '../dto';
 import { User } from 'src/database/entities';
 import { UserStatus, Role } from 'src/modules/admin/enums';
+import { RedisTokenBlacklistService } from './redis-token-blacklist.service';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +31,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private emailService: EmailService,
     private configService: ConfigService,
+    private readonly redisTokenBlacklistService: RedisTokenBlacklistService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -251,8 +253,21 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
-  async logout(userId: number) {
+  async logout(userId: number, accessToken?: string) {
     console.log(userId, 'userId');
+    
+    // Blacklist the access token in Redis if provided
+    if (accessToken) {
+      try {
+        await this.redisTokenBlacklistService.addToBlacklist(accessToken);
+        console.log('Access token blacklisted successfully');
+      } catch (error) {
+        console.error('Failed to blacklist token:', error);
+        // Continue with logout even if blacklisting fails
+      }
+    }
+    
+    // Remove refresh token from database
     await this.userDb.update(userId, { refresh_token: null });
     return { message: 'Logged out successfully' };
   }
