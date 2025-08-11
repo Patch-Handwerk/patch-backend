@@ -170,4 +170,269 @@ export class ClientEvaluationService {
       throw new InternalServerErrorException('Failed to calculate progress');
     }
   }
+  // Get all phases for dashboard
+  async getAllPhases() {
+    try {
+      const phases = await this.phaseRepo.find({
+        relations: ['subPhases'],
+        order: { id: 'ASC' }
+      });
+
+      return {
+        message: 'Phases retrieved successfully',
+        data: phases.map(phase => ({
+          id: phase.id,
+          name: phase.name,
+          subphasesCount: phase.subPhases?.length || 0
+        })),
+        totalPhases: phases.length
+      };
+    } catch (error) {
+      console.error('Error fetching phases:', error);
+      throw new InternalServerErrorException('Failed to fetch phases');
+    }
+  }
+
+  // Get subphases for a specific phase
+  async getSubphasesByPhase(phaseId: number) {
+    try {
+      const phase = await this.phaseRepo.findOne({
+        where: { id: phaseId },
+        relations: ['subPhases']
+      });
+
+      if (!phase) {
+        throw new NotFoundException(`Phase with ID ${phaseId} not found`);
+      }
+
+      // Sort subphases by ID
+      const sortedSubphases = phase.subPhases.sort((a, b) => a.id - b.id);
+
+      return {
+        message: 'Subphases retrieved successfully',
+        phase: {
+          id: phase.id,
+          name: phase.name
+        },
+        data: sortedSubphases.map(subphase => ({
+          id: subphase.id,
+          name: subphase.name
+        })),
+        totalSubphases: phase.subPhases.length
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      console.error('Error fetching subphases:', error);
+      throw new InternalServerErrorException('Failed to fetch subphases');
+    }
+  }
+
+  // Get question and answers for a specific subphase
+  async getQuestionBySubphase(subphaseId: number) {
+    try {
+      const subphase = await this.subPhaseRepo.findOne({
+        where: { id: subphaseId },
+        relations: ['question', 'question.answers']
+      });
+
+      if (!subphase) {
+        throw new NotFoundException(`Subphase with ID ${subphaseId} not found`);
+      }
+
+      if (!subphase.question) {
+        throw new NotFoundException(`No question found for subphase ${subphaseId}`);
+      }
+
+      // Sort answers by point value and group by level
+      const sortedAnswers = subphase.question.answers.sort((a, b) => a.point - b.point);
+      
+      // Group answers by level for better organization
+      const answersByLevel = {};
+      sortedAnswers.forEach(answer => {
+        const level = answer.level || 1;
+        if (!answersByLevel[level]) {
+          answersByLevel[level] = [];
+        }
+        answersByLevel[level].push({
+          id: answer.id,
+          answer: answer.answer,
+          point: answer.point,
+          isStopAnswer: answer.is_stop_answer,
+          level: answer.level,
+          stage: answer.stage,
+          description: answer.description
+        });
+      });
+
+      return {
+        message: 'Question and answers retrieved successfully',
+        subphase: {
+          id: subphase.id,
+          name: subphase.name
+        },
+        question: {
+          id: subphase.question.id,
+          question: subphase.question.question,
+          sortId: subphase.question.sortId
+        },
+        answersByLevel,
+        totalAnswers: subphase.question.answers.length,
+        levelsCount: Object.keys(answersByLevel).length
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      console.error('Error fetching question:', error);
+      throw new InternalServerErrorException('Failed to fetch question and answers');
+    }
+  }
+
+  // Get complete data for a specific phase
+  async getCompletePhaseData(phaseId: number) {
+    try {
+      const phase = await this.phaseRepo.findOne({
+        where: { id: phaseId },
+        relations: [
+          'subPhases',
+          'subPhases.question',
+          'subPhases.question.answers'
+        ],
+        order: {
+          id: 'ASC'
+        }
+      });
+
+      if (!phase) {
+        throw new NotFoundException(`Phase with ID ${phaseId} not found`);
+      }
+
+      // Sort subphases by ID
+      const sortedSubphases = phase.subPhases.sort((a, b) => a.id - b.id);
+      
+      const subphasesWithData = sortedSubphases.map(subphase => {
+        const answersByLevel = {};
+        // Sort answers by point value
+        const sortedAnswers = subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
+        
+        sortedAnswers.forEach(answer => {
+          const level = answer.level || 1;
+          if (!answersByLevel[level]) {
+            answersByLevel[level] = [];
+          }
+          answersByLevel[level].push({
+            id: answer.id,
+            answer: answer.answer,
+            point: answer.point,
+            isStopAnswer: answer.is_stop_answer,
+            level: answer.level,
+            stage: answer.stage,
+            description: answer.description
+          });
+        });
+
+        return {
+          id: subphase.id,
+          name: subphase.name,
+          question: subphase.question ? {
+            id: subphase.question.id,
+            question: subphase.question.question,
+            sortId: subphase.question.sortId,
+            answersByLevel,
+            totalAnswers: subphase.question.answers?.length || 0
+          } : null
+        };
+      });
+
+      return {
+        message: 'Complete phase data retrieved successfully',
+        phase: {
+          id: phase.id,
+          name: phase.name
+        },
+        subphases: subphasesWithData,
+        totalSubphases: phase.subPhases.length
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      console.error('Error fetching complete phase data:', error);
+      throw new InternalServerErrorException('Failed to fetch complete phase data');
+    }
+  }
+
+  // Get complete assessment data (all phases)
+  async getCompleteAssessment() {
+    try {
+      const phases = await this.phaseRepo.find({
+        relations: [
+          'subPhases',
+          'subPhases.question',
+          'subPhases.question.answers'
+        ],
+        order: {
+          id: 'ASC'
+        }
+      });
+
+      const phasesWithData = phases.map(phase => {
+        // Sort subphases by ID
+        const sortedSubphases = phase.subPhases.sort((a, b) => a.id - b.id);
+        
+        const subphasesWithData = sortedSubphases.map(subphase => {
+          const answersByLevel = {};
+          // Sort answers by point value
+          const sortedAnswers = subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
+          
+          sortedAnswers.forEach(answer => {
+            const level = answer.level || 1;
+            if (!answersByLevel[level]) {
+              answersByLevel[level] = [];
+            }
+            answersByLevel[level].push({
+              id: answer.id,
+              answer: answer.answer,
+              point: answer.point,
+              isStopAnswer: answer.is_stop_answer,
+              level: answer.level,
+              stage: answer.stage,
+              description: answer.description
+            });
+          });
+
+          return {
+            id: subphase.id,
+            name: subphase.name,
+            question: subphase.question ? {
+              id: subphase.question.id,
+              question: subphase.question.question,
+              sortId: subphase.question.sortId,
+              answersByLevel,
+              totalAnswers: subphase.question.answers?.length || 0
+            } : null
+          };
+        });
+
+        return {
+          id: phase.id,
+          name: phase.name,
+          subphases: subphasesWithData,
+          totalSubphases: phase.subPhases.length
+        };
+      });
+
+      return {
+        message: 'Complete assessment data retrieved successfully',
+        phases: phasesWithData,
+        totalPhases: phases.length,
+        totalSubphases: phases.reduce((sum, phase) => sum + phase.subPhases.length, 0)
+      };
+    } catch (error) {
+      console.error('Error fetching complete assessment:', error);
+      throw new InternalServerErrorException('Failed to fetch complete assessment data');
+    }
+  }
 }
