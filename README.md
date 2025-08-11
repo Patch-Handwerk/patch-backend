@@ -1,44 +1,29 @@
-# patch-backend
-It is used for all Patch related backend business logics and databases work.
+# Patch Backend
 
-# Remove dist folder 
-Remove-Item -Recurse -Force .\dist
+# Run database migrations and seed data
+npm run migration:run
+npm run seed
 
-# Remove Port Conflicts
-# Normal start
+# Start development server
 npm run start:dev
+```
 
-# If you get port conflicts, use a different port
-set PORT=3003 && npm run start:dev
+**Server**: http://localhost:3002  
+**API Docs**: http://localhost:3002/api
 
-# Or kill processes on port 3002 first
-netstat -ano | findstr :3002
-taskkill /PID <PID> /F
-npm run start:dev
+## API Specification
 
-# Migration Generate
-npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate src/database/migrations/changes-name-to-be-here -d data-source.ts
+📋 **[API_SPECIFICATION.md](API_SPECIFICATION.md)** - Complete input/output data formats for all endpoints
 
-#Migrations Run
-npx ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d data-source.ts
+## Technology Stack
+- **Framework**: NestJS with TypeScript
+- **Database**: PostgreSQL with TypeORM
+- **Authentication**: JWT with refresh tokens
+- **Caching**: Redis for token blacklisting
 
-#Seeders Run
-npx ts-node run-seed.ts
-
--- Delete all rows from specific tables
-DELETE FROM questions;
-DELETE FROM answers;
-DELETE FROM phases;
-DELETE FROM "user";
-
--- Reset sequences (so new inserts start from 1)
-ALTER SEQUENCE questions_id_seq RESTART WITH 1;
-ALTER SEQUENCE answers_id_seq RESTART WITH 1;
-ALTER SEQUENCE phases_id_seq RESTART WITH 1;
-ALTER SEQUENCE sub_phases_id_seq RESTART WITH 1;
-ALTER SEQUENCE user_id_seq RESTART WITH 1;
-
-kill task
-taskkill /f /im node.exe
-
-//hellosql123----> postgresql pass
+## Features
+- ✅ Multi-tenant User Management
+- ✅ Digital Maturity Assessment Engine
+- ✅ Dashboard APIs for frontend integration
+- ✅ Progress Calculation and storage
+- ✅ Admin Oversight and user management
