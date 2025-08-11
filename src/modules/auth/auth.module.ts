@@ -7,6 +7,8 @@ import { JwtRefreshStrategy, JwtStrategy } from './strategies';
 import { User } from '../../database/entities';
 import { EmailModule } from '../email';
 import { AuthService } from './services';
+import { RedisTokenBlacklistService } from './services/redis-token-blacklist.service';
+import { JwtBlacklistGuard } from '../../common/guards/jwt-blacklist.guard';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { AuthService } from './services';
     }),
   ],
   controllers: [AuthController],
-  providers:   [AuthService, JwtStrategy,JwtRefreshStrategy],
+  providers:   [AuthService, JwtStrategy, JwtRefreshStrategy, RedisTokenBlacklistService, JwtBlacklistGuard],
+  exports: [RedisTokenBlacklistService],
 })
 export class AuthModule {}
