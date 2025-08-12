@@ -34,7 +34,7 @@ export class ClientEvaluationService {
   async progressCalculation(calculateData: CalculateProgressDto) {
     try {
       const { tenantId, phaseName, subphaseName, questionId, questionText, selectedAnswers } = calculateData;
-
+      
       // Validate input data
       if (!selectedAnswers || selectedAnswers.length === 0) {
         throw new BadRequestException('At least one answer must be selected');
@@ -50,10 +50,20 @@ export class ClientEvaluationService {
         throw new NotFoundException(`User with ID ${tenantId} not found`);
       }
 
-      console.log(calculateData);
-      // Calculate total points
+   
+      // Calculate progress percentage based on selected answers
       const totalPoints = selectedAnswers.reduce((sum, answer) => sum + answer.point, 0);
-      console.log(totalPoints, "totalPoints");
+      
+      // Use fixed maximum points for the phase (54 points total)
+      const maxPossiblePoints = 54;
+      
+      // Calculate progress as percentage (0-100) based on 54 total points
+      const progressPercentage = Math.round((totalPoints / maxPossiblePoints) * 100);
+      
+      console.log('Selected Answers Points:', selectedAnswers.map(a => a.point));
+      console.log('Total Selected Points:', totalPoints);
+      console.log('Max Possible Points for Phase:', maxPossiblePoints);
+      console.log('Progress Percentage:', progressPercentage + '%');
 
       // Group answers by level to find dominant level
       const levelGroups = {};
@@ -127,11 +137,16 @@ export class ClientEvaluationService {
         });
       }
 
-      // Save to database
+      // Progress percentage is already calculated above
+   
+
+
+      // Save to database with progress as percentage
       const result = this.resultsRepo.create({
         tenant_id: tenantId,
         phase_name: phaseName,
         subphase_name: subphaseName,
+        progress: progressPercentage, // Store as percentage (0-100)
         question_id: questionId,
         selected_answer_text: selectedAnswers.map(a => a.answerText).join('; '),
         selected_answer_point: totalPoints,
@@ -144,14 +159,18 @@ export class ClientEvaluationService {
 
       await this.resultsRepo.save(result);
 
-      return {
+      const response = {
         message: 'Progress calculated successfully',
         totalPoints,
         calculatedLevel: dominantLevel,
         calculatedStage: dominantStage,
         calculatedDescription: dominantDescription,
-        selectedAnswersCount: selectedAnswers.length
+        selectedAnswersCount: selectedAnswers.length,
+        progress: progressPercentage, // Progress as percentage (0-100)
       };
+      
+      console.log('Response being sent:', JSON.stringify(response, null, 2));
+      return response;
 
     } catch (error) {
       // Re-throw HTTP exceptions as they are
@@ -361,6 +380,43 @@ export class ClientEvaluationService {
       }
       console.error('Error fetching complete phase data:', error);
       throw new InternalServerErrorException('Failed to fetch complete phase data');
+    }
+  }
+
+  // Get progress for a specific user
+  async getUserProgress(tenantId: number) {
+    try {
+      const userResults = await this.resultsRepo.find({
+        where: { tenant_id: tenantId },
+        order: { created_at: 'DESC' }
+      });
+
+      if (!userResults || userResults.length === 0) {
+        return {
+          message: 'No progress data found for this user',
+          data: [],
+          totalResults: 0
+        };
+      }
+
+      return {
+        message: 'User progress retrieved successfully',
+        data: userResults.map(result => ({
+          id: result.id,
+          phaseName: result.phase_name,
+          subphaseName: result.subphase_name,
+          progress: result.progress,
+          level: result.level,
+          stage: result.stage,
+          description: result.description,
+          totalPoints: result.total_points,
+          createdAt: result.created_at
+        })),
+        totalResults: userResults.length
+      };
+    } catch (error) {
+      console.error('Error fetching user progress:', error);
+      throw new InternalServerErrorException('Failed to fetch user progress');
     }
   }
 

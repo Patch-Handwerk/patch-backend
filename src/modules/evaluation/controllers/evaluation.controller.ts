@@ -55,11 +55,20 @@ export class EvaluationController {
   }
 
   // Calculate progress from selected answers
-  @Post('results')
+  @Post('answers')
   @ApiOperation({ summary: 'Calculate progress from selected answers' })
   @ApiResponse({ status: 201, description: 'Progress calculated successfully' })
   async calculateProgress(@Body() calculateData: CalculateProgressDto) {
-    console.log(calculateData, "calculateDatacontroller");
     return this.evaluationService.progressCalculation(calculateData);
+  }
+
+  // Get progress for a specific user
+  @Get('/:tenantId/progress')
+  @ApiOperation({ summary: 'Get progress for a specific user' })
+  @ApiResponse({ status: 200, description: 'User progress retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'No progress data found' })
+  @ApiParam({ name: 'tenantId', description: 'ID of the user', example: 1 })
+  async getUserProgress(@Param('tenantId') tenantId: number) {
+    return this.evaluationService.getUserProgress(tenantId);
   }
 }
