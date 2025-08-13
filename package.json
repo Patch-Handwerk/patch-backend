@@ -16,7 +16,7 @@
     "redis:stats": "powershell -ExecutionPolicy Bypass -File scripts\\monitor-redis.ps1 -Stats",
     "redis:keys": "powershell -ExecutionPolicy Bypass -File scripts\\monitor-redis.ps1 -Keys",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/srcmain",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
