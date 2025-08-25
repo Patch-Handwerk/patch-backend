@@ -12,18 +12,18 @@ export class Results {
   answer: Answer;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'tenant_id' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column()
-  tenant_id: number; // Foreign key to users.tenant_id
+  @Column({ type: 'int', nullable: true })
+  user_id: number | null; // Foreign key to users.id
 
   // Progress tracking fields
   @Column({ type: 'int', default: 0 })
   total_points: number;
 
-  @Column({ type: 'int', default: 0 })
-  progress: number; // Progress percentage
+  @Column({ type: 'varchar', nullable: true })
+  progress: string; // Progress percentage as string (e.g., "75%")
 
   // Level, stage, and description tracking
   @Column({ type: 'int', nullable: true })

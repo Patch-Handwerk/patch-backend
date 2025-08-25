@@ -31,24 +31,44 @@ export class ClientEvaluationService {
     private dataSource: DataSource,
   ) {}
 
-  async progressCalculation(calculateData: CalculateProgressDto) {
+  async progressCalculation(calculateData: CalculateProgressDto, userId: number) {
     try {
-      const { tenantId, phaseName, subphaseName, questionId, questionText, selectedAnswers } = calculateData;
+      const { phaseName, subphaseName, questionId, questionText, selectedAnswers } = calculateData;
+      
+      // Use userId from JWT token
+      // const tenantId = userId;
       
       // Validate input data
       if (!selectedAnswers || selectedAnswers.length === 0) {
         throw new BadRequestException('At least one answer must be selected');
       }
 
-      if (!tenantId || !phaseName || !subphaseName || !questionId) {
-        throw new BadRequestException('Missing required fields: tenantId, phaseName, subphaseName, questionId');
+      if (!phaseName || !subphaseName || !questionId) {
+        throw new BadRequestException('Missing required fields: phaseName, subphaseName, questionId');
       }
 
       // Verify user exists
-      const user = await this.userRepo.findOne({ where: { id: tenantId } });
+      const user = await this.userRepo.findOne({ where: { id: userId } });
       if (!user) {
-        throw new NotFoundException(`User with ID ${tenantId} not found`);
+        throw new NotFoundException(`User with ID ${userId} not found`);
       }
+
+      // Allow users to submit multiple answers for different questions
+      // Check if user already answered this specific question
+      const existingProgress = await this.resultsRepo.findOne({
+        where: { 
+          user_id: userId, 
+          question_id: questionId,
+          phase_name: phaseName,
+          subphase_name: subphaseName 
+        }
+      });
+      
+      if(existingProgress) {
+        throw new BadRequestException(`You have already submitted an answer for this question in ${phaseName} - ${subphaseName}`);
+      }
+
+
 
    
       // Calculate progress percentage based on selected answers
@@ -59,11 +79,12 @@ export class ClientEvaluationService {
       
       // Calculate progress as percentage (0-100) based on 54 total points
       const progressPercentage = Math.round((totalPoints / maxPossiblePoints) * 100);
+      const progressPercentageString = progressPercentage + `%`;
       
       console.log('Selected Answers Points:', selectedAnswers.map(a => a.point));
       console.log('Total Selected Points:', totalPoints);
       console.log('Max Possible Points for Phase:', maxPossiblePoints);
-      console.log('Progress Percentage:', progressPercentage + '%');
+      console.log('Progress Percentage:', progressPercentage+ `%`);
 
       // Group answers by level to find dominant level
       const levelGroups = {};
@@ -143,10 +164,10 @@ export class ClientEvaluationService {
 
       // Save to database with progress as percentage
       const result = this.resultsRepo.create({
-        tenant_id: tenantId,
+        user_id: userId,
         phase_name: phaseName,
         subphase_name: subphaseName,
-        progress: progressPercentage, // Store as percentage (0-100)
+        progress: progressPercentageString, // Store as percentage (0-100)
         question_id: questionId,
         selected_answer_text: selectedAnswers.map(a => a.answerText).join('; '),
         selected_answer_point: totalPoints,
@@ -161,6 +182,12 @@ export class ClientEvaluationService {
 
       const response = {
         message: 'Progress calculated successfully',
+        user_id: userId,
+        phase_name: phaseName,
+        subphase_name: subphaseName,
+        question_id: questionId,
+        question_text: questionText,
+        selected_answer_text: selectedAnswers.map(a => a.answerText).join('; '),
         totalPoints,
         calculatedLevel: dominantLevel,
         calculatedStage: dominantStage,
@@ -384,10 +411,10 @@ export class ClientEvaluationService {
   }
 
   // Get progress for a specific user
-  async getUserProgress(tenantId: number) {
+  async getUserProgress(userId: number) {
     try {
       const userResults = await this.resultsRepo.find({
-        where: { tenant_id: tenantId },
+        where: { user_id: userId },
         order: { created_at: 'DESC' }
       });
 
@@ -410,6 +437,7 @@ export class ClientEvaluationService {
           stage: result.stage,
           description: result.description,
           totalPoints: result.total_points,
+          selectedAnswers: result.selected_answer_text,
           createdAt: result.created_at
         })),
         totalResults: userResults.length

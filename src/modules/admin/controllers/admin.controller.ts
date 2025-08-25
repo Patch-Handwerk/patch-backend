@@ -23,7 +23,7 @@ import { UpdateUserStatusDto, GetUsersDto } from '../dtos';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from '../services';
 
-@ApiTags('admin')
+@ApiTags('admin') 
 @ApiBearerAuth()
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -31,6 +31,7 @@ import { AdminService } from '../services';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  // Get all users with optional filters
   @ApiOperation({ summary: 'Get all users with optional filters' })
   @ApiResponse({
     status: 200,
@@ -51,6 +52,7 @@ export class AdminController {
     return this.adminService.getUsers(filterDto);
   }
 
+  // Update a user's status (approve/reject)
   @ApiOperation({ summary: "Update a user's status (approve/reject)" })
   @ApiResponse({
     status: 200,

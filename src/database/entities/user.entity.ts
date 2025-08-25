@@ -41,7 +41,4 @@ export class User {
   //Add user entity for REFRESH TOKEN module
   @Column({ type: 'text', nullable: true })
   refresh_token: string | null;
-
-  @Column({ type: 'int', generated: 'increment', unique: true })
-  tenant_id: number;
 }
