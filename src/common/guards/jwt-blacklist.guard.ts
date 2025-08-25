@@ -9,6 +9,13 @@ export class JwtBlacklistGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // First, let the parent JWT guard validate the token and populate req.user
+    const canActivate = await super.canActivate(context) as boolean;
+    
+    if (!canActivate) {
+      return false;
+    }
+
     const request = context.switchToHttp().getRequest();
     const token = request.headers.authorization?.replace('Bearer ', '');
     
@@ -19,10 +26,9 @@ export class JwtBlacklistGuard extends AuthGuard('jwt') {
     // Check if token is blacklisted in Redis
     const isBlacklisted = await this.redisTokenBlacklistService.isBlacklisted(token);
     if (isBlacklisted) {
-      throw new UnauthorizedException('Token has been revoked');
+      throw new UnauthorizedException('User logged out, please login again');
     }
 
-    // If not blacklisted, proceed with JWT validation
-    return super.canActivate(context) as Promise<boolean>;
+    return true;
   }
 }

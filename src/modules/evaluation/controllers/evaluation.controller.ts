@@ -1,9 +1,12 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, Param, Query, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ClientEvaluationService } from '../services/evaluation.service';
 import { CalculateProgressDto } from '../dto/calculate-progress.dto';
+import { JwtBlacklistGuard } from 'src/common/guards/jwt-blacklist.guard';
+import { RequestWithUser } from 'src/config/types/RequestWithUser';
 
 @ApiTags('evaluation')
+@ApiBearerAuth()
 @Controller('evaluation')
 export class EvaluationController {
   constructor(private readonly evaluationService: ClientEvaluationService) {}
@@ -12,7 +15,8 @@ export class EvaluationController {
   @Get('phases')
   @ApiOperation({ summary: 'Get all phases for dashboard' })
   @ApiResponse({ status: 200, description: 'Phases retrieved successfully' })
-  async getAllPhases() {
+  async getAllPhases(@Req() req: RequestWithUser) {
+    // const userId = req.user.id;
     return this.evaluationService.getAllPhases();
   }
 
@@ -22,7 +26,8 @@ export class EvaluationController {
   @ApiResponse({ status: 200, description: 'Subphases retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Phase not found' })
   @ApiParam({ name: 'phaseId', description: 'ID of the phase', example: 1 })
-  async getSubphasesByPhase(@Param('phaseId') phaseId: number) {
+  async getSubphasesByPhase(@Param('phaseId') phaseId: number, @Req() req: RequestWithUser) {
+    // const userId = req.user.id;
     return this.evaluationService.getSubphasesByPhase(phaseId);
   }
 
@@ -32,7 +37,8 @@ export class EvaluationController {
   @ApiResponse({ status: 200, description: 'Question and answers retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Subphase or question not found' })
   @ApiParam({ name: 'subphaseId', description: 'ID of the subphase', example: 1 })
-  async getQuestionBySubphase(@Param('subphaseId') subphaseId: number) {
+  async getQuestionBySubphase(@Param('subphaseId') subphaseId: number, @Req() req: RequestWithUser) {
+    // const userId = req.user.id;
     return this.evaluationService.getQuestionBySubphase(subphaseId);
   }
 
@@ -42,33 +48,47 @@ export class EvaluationController {
   @ApiResponse({ status: 200, description: 'Complete phase data retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Phase not found' })
   @ApiParam({ name: 'phaseId', description: 'ID of the phase', example: 1 })
-  async getCompletePhaseData(@Param('phaseId') phaseId: number) {
+  async getCompletePhaseData(@Param('phaseId') phaseId: number, @Req() req: RequestWithUser) {
+    // const userId = req.user.id;
     return this.evaluationService.getCompletePhaseData(phaseId);
   }
 
   // Get all data for entire assessment (all phases with complete data)
-  @Get('complete-assessment')
+  @Get('/complete-assessment')
   @ApiOperation({ summary: 'Get complete assessment data (all phases)' })
   @ApiResponse({ status: 200, description: 'Complete assessment data retrieved successfully' })
-  async getCompleteAssessment() {
+  async getCompleteAssessment(@Req() req: RequestWithUser) {
+    // const userId = req.user.id;
     return this.evaluationService.getCompleteAssessment();
   }
 
   // Calculate progress from selected answers
-  @Post('answers')
+  @UseGuards(JwtBlacklistGuard)
+  @Post('/answers')
   @ApiOperation({ summary: 'Calculate progress from selected answers' })
   @ApiResponse({ status: 201, description: 'Progress calculated successfully' })
-  async calculateProgress(@Body() calculateData: CalculateProgressDto) {
-    return this.evaluationService.progressCalculation(calculateData);
+  async calculateProgress(@Body() calculateData: CalculateProgressDto, @Req() req: RequestWithUser) {
+    console.log('Full request user object:', req.user);
+    console.log('Request headers:', req.headers.authorization);
+    
+    if (!req.user || !req.user.id) {
+      throw new UnauthorizedException('User not found in request. Please check your JWT token.');
+    }
+    
+    const userId = req.user.id;
+    console.log('User ID extracted:', userId);
+
+    return this.evaluationService.progressCalculation(calculateData, userId);
   }
 
-  // Get progress for a specific user
-  @Get('/:tenantId/progress')
-  @ApiOperation({ summary: 'Get progress for a specific user' })
+  // Get progress for the current user
+  @UseGuards(JwtBlacklistGuard)
+  @Get(':id/progress')
+  @ApiOperation({ summary: 'Get progress for the current user' })
   @ApiResponse({ status: 200, description: 'User progress retrieved successfully' })
   @ApiResponse({ status: 404, description: 'No progress data found' })
-  @ApiParam({ name: 'tenantId', description: 'ID of the user', example: 1 })
-  async getUserProgress(@Param('tenantId') tenantId: number) {
-    return this.evaluationService.getUserProgress(tenantId);
+  async getUserProgress(@Param('id') id: number, @Req() req: RequestWithUser) {
+    // const userId = req.user.id;
+    return this.evaluationService.getUserProgress(id);
   }
 }

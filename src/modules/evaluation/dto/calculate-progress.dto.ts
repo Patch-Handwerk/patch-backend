@@ -25,9 +25,6 @@ export class SimpleSelectedAnswerDto {
 }
 
 export class CalculateProgressDto {
-  @IsNumber()
-  tenantId: number;
-
   @IsString()
   phaseName: string;
 

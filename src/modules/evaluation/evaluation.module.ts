@@ -9,12 +9,14 @@ import { ClientEvaluationService } from "./services/evaluation.service";
 import { Stage } from "src/database/entities/stage.entity";
 import { Results } from "src/database/entities/results.entity";
 import { User } from "src/database/entities/user.entity";
+import { JwtBlacklistGuard } from "src/common/guards/jwt-blacklist.guard";
+import { RedisTokenBlacklistService } from "src/modules/auth/services/redis-token-blacklist.service";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Phase, SubPhase, Question, Answer, Stage, Results, User]),
   ],
   controllers: [EvaluationController],
-  providers: [ClientEvaluationService],
+  providers: [ClientEvaluationService, JwtBlacklistGuard, RedisTokenBlacklistService],
 })
 export class EvaluationModule {}
