@@ -122,8 +122,8 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION'),
+      secret: this.configService.get<string>('refreshTokenSecret'),
+      expiresIn: this.configService.get<string>('refreshTokenExpiration'),
     });
 
     // Hash & store refresh token in DB
@@ -212,7 +212,7 @@ export class AuthService {
     try {
       // 1) Verify the refresh token signature & expiry
       const payload = this.jwtService.verify(refresh_token, {
-        secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+        secret: this.configService.get<string>('refreshTokenSecret'),
       });
 
       console.log(payload, 'checkPayload');
@@ -234,9 +234,9 @@ export class AuthService {
       const newPayload = { id: user.id, role: user.role };
       const newAccessToken = this.jwtService.sign(newPayload);
       const newrefresh_token = this.jwtService.sign(newPayload, {
-        secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
+        secret: this.configService.get<string>('refreshTokenSecret'),
         expiresIn: this.configService.get<string>(
-          'JWT_REFRESH_TOKEN_EXPIRATION',
+          'refreshTokenExpiration',
         ),
       });
 
