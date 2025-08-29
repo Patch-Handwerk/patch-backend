@@ -10,9 +10,10 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "build": "npx nest build || npm run build:tsc",
-    "build:nest": "nest build",
+    "build": "tsc -p tsconfig.build.json",
+    "build:nest": "nest build", 
     "build:tsc": "tsc -p tsconfig.build.json",
+    "build:simple": "npx tsc --outDir dist --rootDir src --module commonjs --target ES2020 --experimentalDecorators --emitDecoratorMetadata --skipLibCheck --esModuleInterop src/**/*.ts",
     "check-node": "node --version && npm --version",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
