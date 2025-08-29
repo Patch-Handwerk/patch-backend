@@ -10,7 +10,7 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "prebuild": "npm ci",
+    "prebuild": "npm install",
     "build": "tsc -p tsconfig.build.json",
     "build:nest": "nest build", 
     "build:tsc": "tsc -p tsconfig.build.json",
