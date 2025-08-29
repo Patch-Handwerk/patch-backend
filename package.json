@@ -17,7 +17,7 @@
     "build:simple": "npx tsc --outDir dist --rootDir src --module commonjs --target ES2020 --experimentalDecorators --emitDecoratorMetadata --skipLibCheck --esModuleInterop src/**/*.ts",
     "check-node": "node --version && npm --version",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node --max-old-space-size=1024 dist/src/main",
+    "start": "cross-env NODE_OPTIONS=\"--max-old-space-size=1024\" nest start",
     "start:dev": "nest start --watch",
     "start:dev:safe": "scripts\\start-dev.bat",
     "kill-port": "powershell -ExecutionPolicy Bypass -File scripts\\kill-port.ps1",
@@ -69,7 +69,8 @@
     "@nestjs/cli": "^11.0.0",
     "typescript": "^5.7.3",
     "@types/node": "^22.10.7",
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "cross-env": "^7.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
