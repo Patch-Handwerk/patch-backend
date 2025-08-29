@@ -5,8 +5,14 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": "=22.14.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
-    "build": "npx nest build",
+    "build": "tsc -p tsconfig.build.json",
+    "build:nest": "nest build",
+    "check-node": "node --version && npm --version",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -56,12 +62,12 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.22"
+    "typeorm": "^0.3.22",
+    "@nestjs/cli": "^11.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.1.6",
     "@swc/cli": "^0.6.0",
