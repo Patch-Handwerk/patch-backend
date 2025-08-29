@@ -37,11 +37,12 @@ async function bootstrap() {
     transform: true
   }));
   const port = process.env.PORT ?? 3002;
+  const host = process.env.HOST ?? '0.0.0.0';
   
   try {
-    await app.listen(port);
-    console.log(`🚀 Application is running on: http://localhost:${port}`);
-    console.log(`📚 Swagger documentation available at: http://localhost:${port}/api`);
+    await app.listen(port, host);
+    console.log(`🚀 Application is running on: http://${host}:${port}`);
+    console.log(`📚 Swagger documentation available at: http://${host}:${port}/api`);
   } catch (error) {
     if (error.code === 'EADDRINUSE') {
       console.error(`❌ Port ${port} is already in use. Please try one of the following:`);
