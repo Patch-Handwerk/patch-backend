@@ -18,10 +18,21 @@ import { JwtBlacklistGuard } from '../../common/guards/jwt-blacklist.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],                                    
       inject:  [ConfigService],                                   
-      useFactory: async (config: ConfigService) => ({             
-        secret: config.get<string>('accessTokenSecret'),                 
-        signOptions: { expiresIn: config.get<string>('accessTokenExpiration') },
-      }),
+      useFactory: async (config: ConfigService) => {
+        const secret = config.get<string>('accessTokenSecret');
+        const expiration = config.get<string>('accessTokenExpiration');
+        console.log('Auth Module Config Debug:', {
+          accessTokenSecret: secret,
+          accessTokenExpiration: expiration,
+          envSecret: process.env.JWT_ACCESS_TOKEN_SECRET,
+          envExpiration: process.env.JWT_ACCESS_TOKEN_EXPIRATION
+        });
+        
+        return {
+          secret: secret || process.env.JWT_ACCESS_TOKEN_SECRET,                 
+          signOptions: { expiresIn: expiration || process.env.JWT_ACCESS_TOKEN_EXPIRATION },
+        };
+      },
     }),
   ],
   controllers: [AuthController],
