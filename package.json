@@ -10,7 +10,7 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "nest build",
     "build:nest": "nest build",
     "check-node": "node --version && npm --version",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
