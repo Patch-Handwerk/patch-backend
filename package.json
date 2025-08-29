@@ -10,8 +10,9 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "build": "nest build",
+    "build": "npx nest build || npm run build:tsc",
     "build:nest": "nest build",
+    "build:tsc": "tsc -p tsconfig.build.json",
     "check-node": "node --version && npm --version",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -63,7 +64,8 @@
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.22",
-    "@nestjs/cli": "^11.0.0"
+    "@nestjs/cli": "^11.0.0",
+    "typescript": "^5.7.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -92,7 +94,6 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
