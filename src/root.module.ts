@@ -37,9 +37,9 @@ import { EvaluationModule } from './modules/evaluation/evaluation.module';
         database: config.get<string>('DB_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: config.get<boolean>('TYPEORM_SYNC'),
-        ssl: {
+        ssl: process.env.NODE_ENV === 'production' ? {
           rejectUnauthorized: false
-        },
+        } : false,
       }),
     }),
     AuthModule,
