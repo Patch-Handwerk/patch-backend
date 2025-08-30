@@ -13,7 +13,8 @@ export class RedisTokenBlacklistService implements OnModuleDestroy {
     
 
     if (!redisConfig) {
-      throw new Error('Redis configuration not found. Please ensure Redis configuration is properly loaded.');
+      console.warn('Redis configuration not found. Token blacklisting will be disabled.');
+      return;
     }
     
     this.redisClient = createClient({
