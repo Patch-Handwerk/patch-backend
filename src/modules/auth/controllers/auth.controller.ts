@@ -75,6 +75,53 @@ export class AuthController {
     }
   }
 
+  @ApiOperation({ 
+    summary: 'List all users in database',
+    description: 'Debug endpoint to list all users currently in the database.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of all users retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Users retrieved successfully' },
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              email: { type: 'string', example: 'user@example.com' },
+              name: { type: 'string', example: 'John Doe' },
+              role: { type: 'string', example: 'consultant' },
+              user_status: { type: 'string', example: 'pending' },
+              is_verified: { type: 'boolean', example: false }
+            }
+          }
+        }
+      }
+    }
+  })
+  @Get('users/list')
+  async getAllUsers() {
+    try {
+      const users = await this.authService.getAllUsers();
+      return {
+        success: true,
+        message: 'Users retrieved successfully',
+        data: users
+      };
+    } catch (error) {
+      console.error('❌ Failed to get all users:', error);
+      throw new HttpException(
+        'Failed to retrieve users: ' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   // @ApiOperation({ 
   //   summary: 'Register a new user',
   //   description: 'Creates a new user account with the provided information. The user will receive a verification email to activate their account.'
