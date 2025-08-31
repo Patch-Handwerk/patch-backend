@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards,Req,Res, HttpException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards,Req,Res, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Response, Request } from 'express';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
@@ -13,43 +13,119 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({ 
+    summary: 'Test database connection',
+    description: 'Simple endpoint to test if the database connection is working properly.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Database connection is working',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Database connection is working' },
+        timestamp: { type: 'string', example: '2025-08-30T01:39:34.123Z' }
+      }
+    }
+  })
+  @Get('health/database')
+  async testDatabaseConnection() {
+    try {
+      // Simple query to test database connection
+      const result = await this.authService.testDatabaseConnection();
+      return {
+        success: true,
+        message: 'Database connection is working',
+        timestamp: new Date().toISOString(),
+        data: result
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Database connection failed: ' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  // @ApiOperation({ 
+  //   summary: 'Register a new user',
+  //   description: 'Creates a new user account with the provided information. The user will receive a verification email to activate their account.'
+  // })
+  // @ApiResponse({ 
+  //   status: 201, 
+  //   description: 'User registered successfully. A verification email has been sent.',
+  //   type: RegisterResponseDto
+  // })
+  // @ApiResponse({ status: 400, description: 'Validation error or user already exists' })
+  // @Post('register')
+  // async register(@Body() dto: RegisterDto) {
+  //   try {
+  //     const result = await this.authService.register(dto);
+  //     return result;
+  //   } catch (error) {
+  //     // Handle the special case where HttpException is used for success
+  //     if (error instanceof HttpException && error.getStatus() === 201) {
+  //       return {
+  //         success: true,
+  //         message: error.message,
+  //         data: {
+  //           user: {
+  //             id: null,
+  //             name: dto.name,
+  //             email: dto.email,
+  //             role: dto.role,
+  //             user_status: 'PENDING',
+  //             is_verified: false,
+  //             createdAt: new Date().toISOString()
+  //           },
+  //           emailSent: true
+  //         }
+  //       };
+  //     }
+  //     // Let the global exception filter handle other errors
+  //     throw error;
+  //   }
+  // }
+
+
+  @ApiOperation({ 
     summary: 'Register a new user',
     description: 'Creates a new user account with the provided information. The user will receive a verification email to activate their account.'
   })
   @ApiResponse({ 
     status: 201, 
     description: 'User registered successfully. A verification email has been sent.',
-    type: RegisterResponseDto
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'User created successfully. Please check your email to verify your account.' },
+        data: {
+          type: 'object',
+          properties: {
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'number', example: 1 },
+                name: { type: 'string', example: 'John Doe' },
+                email: { type: 'string', example: 'john.doe@example.com' },
+                role: { type: 'string', example: 'USER' },
+                user_status: { type: 'string', example: 'PENDING' },
+                is_verified: { type: 'boolean', example: false },
+                createdAt: { type: 'string', example: '2025-08-30T01:39:34.123Z' }
+              }
+            },
+            emailSent: { type: 'boolean', example: true }
+          }
+        }
+      }
+    }
   })
   @ApiResponse({ status: 400, description: 'Validation error or user already exists' })
+  @ApiResponse({ status: 500, description: 'Internal server error during registration' })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
-    try {
-      const result = await this.authService.register(dto);
-      return result;
-    } catch (error) {
-      // Handle the special case where HttpException is used for success
-      if (error instanceof HttpException && error.getStatus() === 201) {
-        return {
-          success: true,
-          message: error.message,
-          data: {
-            user: {
-              id: null,
-              name: dto.name,
-              email: dto.email,
-              role: dto.role,
-              user_status: 'PENDING',
-              is_verified: false,
-              createdAt: new Date().toISOString()
-            },
-            emailSent: true
-          }
-        };
-      }
-      // Let the global exception filter handle other errors
-      throw error;
-    }
+    return this.authService.register(dto);
   }
 
   @ApiOperation({ 
