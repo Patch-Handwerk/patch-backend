@@ -13,35 +13,63 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({ 
-    summary: 'Test database connection',
-    description: 'Simple endpoint to test if the database connection is working properly.'
+    summary: 'Test database connection and operations',
+    description: 'Comprehensive endpoint to test database connectivity, queries, and write operations.'
   })
   @ApiResponse({ 
     status: 200, 
-    description: 'Database connection is working',
+    description: 'Database connection and operations are working',
     schema: {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Database connection is working' },
-        timestamp: { type: 'string', example: '2025-08-30T01:39:34.123Z' }
+        message: { type: 'string', example: 'Database connection and operations are working' },
+        timestamp: { type: 'string', example: '2025-08-30T01:39:34.123Z' },
+        data: {
+          type: 'object',
+          properties: {
+            connectionTest: { type: 'boolean', example: true },
+            queryTest: { type: 'boolean', example: true },
+            writeTest: { type: 'boolean', example: true },
+            environment: { type: 'string', example: 'production' }
+          }
+        }
       }
     }
   })
   @Get('health/database')
   async testDatabaseConnection() {
     try {
-      // Simple query to test database connection
-      const result = await this.authService.testDatabaseConnection();
+      console.log('🔍 Testing database connection in production...');
+      
+      // Test 1: Basic connection
+      const connectionResult = await this.authService.testDatabaseConnection();
+      console.log('✅ Connection test passed:', connectionResult);
+      
+      // Test 2: Query existing users
+      const userCount = await this.authService.getUserCount();
+      console.log('✅ Query test passed - User count:', userCount);
+      
+      // Test 3: Test write operation (create a test record)
+      const writeTest = await this.authService.testWriteOperation();
+      console.log('✅ Write test passed:', writeTest);
+      
       return {
         success: true,
-        message: 'Database connection is working',
+        message: 'Database connection and operations are working',
         timestamp: new Date().toISOString(),
-        data: result
+        data: {
+          connectionTest: true,
+          queryTest: true,
+          writeTest: true,
+          environment: process.env.NODE_ENV || 'development',
+          userCount: userCount
+        }
       };
     } catch (error) {
+      console.error('❌ Database health check failed:', error);
       throw new HttpException(
-        'Database connection failed: ' + error.message,
+        'Database health check failed: ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

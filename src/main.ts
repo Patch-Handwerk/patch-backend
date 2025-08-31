@@ -8,11 +8,27 @@ import { Express } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(RootModule);
-  app.enableCors();
+  
+  // Enhanced CORS configuration for production
+  app.enableCors({
+    origin: true, // Allow all origins in development/production
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    credentials: true,
+  });
   
   // Handle favicon requests to prevent 404 errors
   app.use('/favicon.ico', (req: any, res: any) => {
     res.status(204).end(); // No content response
+  });
+  
+  // Simple health check endpoint
+  app.use('/health', (req: any, res: any) => {
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
   });
   
   // Global exception filter

@@ -46,6 +46,43 @@ export class AuthService {
     }
   }
 
+  async getUserCount() {
+    try {
+      const count = await this.userDb.count();
+      console.log('✅ User count query successful:', count);
+      return count;
+    } catch (error) {
+      console.error('❌ User count query failed:', error);
+      throw error;
+    }
+  }
+
+  async testWriteOperation() {
+    try {
+      // Create a temporary test user to verify write operations
+      const testUser = this.userDb.create({
+        name: 'TEST_USER_' + Date.now(),
+        email: 'test_' + Date.now() + '@test.com',
+        password: 'test123',
+        role: Role.CONSULTANT,
+        user_status: UserStatus.PENDING,
+        is_verified: false
+      });
+      
+      const savedUser = await this.userDb.save(testUser);
+      console.log('✅ Write test successful - User ID:', savedUser.id);
+      
+      // Clean up - delete the test user
+      await this.userDb.remove(savedUser);
+      console.log('✅ Test user cleaned up');
+      
+      return { success: true, testUserId: savedUser.id };
+    } catch (error) {
+      console.error('❌ Write test failed:', error);
+      throw error;
+    }
+  }
+
   // async register(dto: RegisterDto) {
   //   //Check if the user exist or not in our database
   //   const userExist = await this.userDb.findOne({
