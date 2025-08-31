@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, UseGuards,Req,Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards,Req,Res, HttpException } from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Response, Request } from 'express';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
@@ -24,7 +24,32 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Validation error or user already exists' })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+    try {
+      const result = await this.authService.register(dto);
+      return result;
+    } catch (error) {
+      // Handle the special case where HttpException is used for success
+      if (error instanceof HttpException && error.getStatus() === 201) {
+        return {
+          success: true,
+          message: error.message,
+          data: {
+            user: {
+              id: null,
+              name: dto.name,
+              email: dto.email,
+              role: dto.role,
+              user_status: 'PENDING',
+              is_verified: false,
+              createdAt: new Date().toISOString()
+            },
+            emailSent: true
+          }
+        };
+      }
+      // Let the global exception filter handle other errors
+      throw error;
+    }
   }
 
   @ApiOperation({ 

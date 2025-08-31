@@ -10,10 +10,10 @@ export class UserResponseDto {
   @ApiProperty({ example: 'john.doe@example.com' })
   email: string;
 
-  @ApiProperty({ example: 'USER', enum: ['USER', 'ADMIN'] })
+  @ApiProperty({ example: 'USER', enum: ['CONSULTANT', 'CRAFTSMAN' , 'ADMIN'] })
   role: string;
 
-  @ApiProperty({ example: 'ACTIVE', enum: ['PENDING', 'ACTIVE', 'INACTIVE'] })
+  @ApiProperty({ example: 'ACTIVE', enum: ['PENDING', 'APPROVED', 'REJECTED'] })
   status: string;
 
   @ApiProperty({ example: '2025-08-30T01:39:34.123Z' })

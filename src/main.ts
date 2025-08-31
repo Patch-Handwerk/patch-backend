@@ -108,20 +108,20 @@ All API responses follow this standardized structure:
 
 ### Evaluation Endpoints
 - \`GET /evaluation/phases\` - Get all evaluation phases
-- \`GET /evaluation/phases/{id}/subphases\` - Get subphases for a phase
-- \`GET /evaluation/subphases/{id}/question\` - Get questions for a subphase
-- \`GET /evaluation/phases/{id}/complete\` - Get complete phase data
+- \`GET /evaluation/phases/{phaseId}/subphases\` - Get subphases for a phase
+- \`GET /evaluation/subphases/{subphaseId}/question\` - Get questions for a subphase
+- \`GET /evaluation/phases/{phaseId}/complete\` - Get complete phase data
 - \`GET /evaluation/complete-assessment\` - Get all assessment data
 - \`POST /evaluation/answers\` - Submit answers and calculate progress
-- \`GET /evaluation/{id}/progress\` - Get user progress
+- \`GET /evaluation/{userId}/progress\` - Get user progress
 
 ### Admin Endpoints
 - \`GET /admin/users\` - Get all users (Admin only)
-- \`PATCH /admin/users/{id}/status\` - Update user status (Admin only)
+- \`PATCH /admin/users/{userId}/status\` - Update user status (Admin only)
 
 ## 📞 Support
 
-For technical support or questions, please contact the Backend team.
+For technical support or questions, please contact the Patch team.
 
 ## 🔧 Development
 
@@ -134,7 +134,6 @@ For technical support or questions, please contact the Backend team.
     .addTag('auth', 'Authentication & Authorization')
     .addTag('admin', 'Administrative Functions')
     .addTag('evaluation', 'Assessment System')
-    .addTag('email', 'Email Services')
     .addBearerAuth(
       {
         type: 'http',
