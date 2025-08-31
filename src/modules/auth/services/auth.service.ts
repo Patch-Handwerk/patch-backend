@@ -83,6 +83,19 @@ export class AuthService {
     }
   }
 
+  async getAllUsers() {
+    try {
+      const users = await this.userDb.find({
+        select: ['id', 'email', 'name', 'role', 'user_status', 'is_verified']
+      });
+      console.log('📊 All users in database:', users);
+      return users;
+    } catch (error) {
+      console.error('❌ Failed to get all users:', error);
+      throw error;
+    }
+  }
+
   // async register(dto: RegisterDto) {
   //   //Check if the user exist or not in our database
   //   const userExist = await this.userDb.findOne({
@@ -121,14 +134,36 @@ export class AuthService {
   async register(dto: RegisterDto) {
     try {
       console.log('🔍 Starting registration process for:', dto.email);
+      console.log('🌍 Environment:', process.env.NODE_ENV);
+      console.log('📊 Database config check:', {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        database: process.env.DB_NAME,
+        ssl: process.env.NODE_ENV === 'production'
+      });
       
       // Check if the user exists in our database
+      console.log('🔍 Executing findOne query for email:', dto.email);
       const userExist = await this.userDb.findOne({
         where: { email: dto.email },
       });
       
+      console.log('🔍 findOne query result:', {
+        userExist: userExist ? 'USER_FOUND' : 'NO_USER',
+        userExistDetails: userExist ? {
+          id: userExist.id,
+          email: userExist.email,
+          name: userExist.name
+        } : null
+      });
+      
       if (userExist) {
         console.log('❌ User already exists:', dto.email);
+        console.log('❌ Existing user details:', {
+          id: userExist.id,
+          email: userExist.email,
+          name: userExist.name
+        });
         throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
       }
   
