@@ -21,12 +21,6 @@ import { JwtBlacklistGuard } from '../../common/guards/jwt-blacklist.guard';
       useFactory: async (config: ConfigService) => {
         const secret = config.get<string>('accessTokenSecret');
         const expiration = config.get<string>('accessTokenExpiration');
-        console.log('Auth Module Config Debug:', {
-          accessTokenSecret: secret,
-          accessTokenExpiration: expiration,
-          envSecret: process.env.JWT_ACCESS_TOKEN_SECRET,
-          envExpiration: process.env.JWT_ACCESS_TOKEN_EXPIRATION
-        });
         
         return {
           secret: secret || process.env.JWT_ACCESS_TOKEN_SECRET,                 

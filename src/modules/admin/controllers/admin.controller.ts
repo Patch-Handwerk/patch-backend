@@ -19,7 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '../enums';
 import { Roles, RolesGuard } from 'src/common';
-import { UpdateUserStatusDto, GetUsersDto } from '../dtos';
+import { UpdateUserStatusDto, GetUsersDto } from '../dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from '../services';
 

@@ -4,7 +4,6 @@ import {ValidationPipe} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './core/exceptions';
 import { ResponseInterceptor } from './common/interceptors';
-import { Express } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(RootModule);

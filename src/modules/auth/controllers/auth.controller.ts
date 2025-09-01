@@ -1,10 +1,10 @@
 import { Controller, Post, Body, Get, Query, UseGuards,Req,Res, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
 import { LoginDto,RegisterDto, ForgotPasswordDto,RefreshTokenDto,ResetPasswordDto } from '../dto';
 import { AuthService } from '../services';
-import { JwtAuthGuard, JwtRefreshGuard, JwtBlacklistGuard } from 'src/common';
+import { JwtRefreshGuard, JwtBlacklistGuard } from 'src/common';
 import { LoginResponseDto, RegisterResponseDto } from '../dto/auth-response.dto';
 
 @ApiTags('auth')
@@ -52,7 +52,6 @@ export class AuthController {
         data: users
       };
     } catch (error) {
-      console.error('❌ Failed to get all users:', error);
       throw new HttpException(
         'Failed to retrieve users: ' + error.message,
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -182,9 +181,6 @@ export class AuthController {
     @Req() req: RequestWithUser,
     @Res({ passthrough: true }) res: Response,
   ) {
-
-    console.log(req.user, 'req.user');
-    console.log(req, 'req');
     // Extract the access token from the Authorization header
     const accessToken = req.headers.authorization?.replace('Bearer ', '');
     

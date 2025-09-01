@@ -29,8 +29,7 @@ export class EvaluationController {
     description: 'Phases retrieved successfully',
     type: [PhaseResponseDto]
   })
-  async getAllPhases(@Req() req: RequestWithUser) {
-    // const userId = req.user.id;
+  async getAllPhases() {
     return this.evaluationService.getAllPhases();
   }
 
@@ -48,7 +47,6 @@ export class EvaluationController {
   @ApiResponse({ status: 404, description: 'Phase not found' })
   @ApiParam({ name: 'phaseId', description: 'ID of the phase to get subphases for', example: 1 })
   async getSubphasesByPhase(@Param('phaseId') phaseId: number, @Req() req: RequestWithUser) {
-    // const userId = req.user.id;
     return this.evaluationService.getSubphasesByPhase(phaseId);
   }
 
@@ -65,8 +63,7 @@ export class EvaluationController {
   })
   @ApiResponse({ status: 404, description: 'Subphase or question not found' })
   @ApiParam({ name: 'subphaseId', description: 'ID of the subphase to get question for', example: 1 })
-  async getQuestionBySubphase(@Param('subphaseId') subphaseId: number, @Req() req: RequestWithUser) {
-    // const userId = req.user.id;
+  async getQuestionBySubphase(@Param('subphaseId') subphaseId: number) {
     return this.evaluationService.getQuestionBySubphase(subphaseId);
   }
 
@@ -83,8 +80,7 @@ export class EvaluationController {
   })
   @ApiResponse({ status: 404, description: 'Phase not found' })
   @ApiParam({ name: 'phaseId', description: 'ID of the phase to get complete data for', example: 1 })
-  async getCompletePhaseData(@Param('phaseId') phaseId: number, @Req() req: RequestWithUser) {
-    // const userId = req.user.id;
+  async getCompletePhaseData(@Param('phaseId') phaseId: number) {
     return this.evaluationService.getCompletePhaseData(phaseId);
   }
 
@@ -95,8 +91,7 @@ export class EvaluationController {
     description: 'Retrieves complete assessment data for all phases including subphases, questions, and answers. This endpoint provides the entire assessment structure in a single request.'
   })
   @ApiResponse({ status: 200, description: 'Complete assessment data retrieved successfully' })
-  async getCompleteAssessment(@Req() req: RequestWithUser) {
-    // const userId = req.user.id;
+  async getCompleteAssessment() {
     return this.evaluationService.getCompleteAssessment();
   }
 
@@ -115,16 +110,10 @@ export class EvaluationController {
   @ApiResponse({ status: 400, description: 'Invalid request data or validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   async calculateProgress(@Body() calculateData: CalculateProgressDto, @Req() req: RequestWithUser) {
-    console.log('Full request user object:', req.user);
-    console.log('Request headers:', req.headers.authorization);
-    
     if (!req.user || !req.user.id) {
       throw new UnauthorizedException('User not found in request. Please check your JWT token.');
     }
-    
     const userId = req.user.id;
-    console.log('User ID extracted:', userId);
-
     return this.evaluationService.progressCalculation(calculateData, userId);
   }
 
@@ -143,8 +132,7 @@ export class EvaluationController {
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   @ApiResponse({ status: 404, description: 'No progress data found for the user' })
   @ApiParam({ name: 'id', description: 'User ID to get progress for', example: 1 })
-  async getUserProgress(@Param('id') id: number, @Req() req: RequestWithUser) {
-    // const userId = req.user.id;
+  async getUserProgress(@Param('id') id: number) {
     return this.evaluationService.getUserProgress(id);
   }
 }

@@ -37,10 +37,7 @@ export class EmailService {
   async sendVerificationLink(email: string, token: string) {
     try {
       const backendUrl = this.configService.get<string>('PORT');
-      console.log(backendUrl,'backendUrl'); //check backendUrl is working???
-      const url = `${backendUrl}/verify-email?token=${token}`;
-      console.log(url,'url'); //check url is working???
-      
+      const url = `${backendUrl}/verify-email?token=${token}`;      
       await this.mailer.sendMail({
         to: email,
         subject: 'Please verify your email',

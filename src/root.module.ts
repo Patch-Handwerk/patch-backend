@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AdminModule, AuthModule, EmailModule, User } from './modules';
+import { AdminModule, AuthModule, EmailModule } from './modules';
 import {
   AppConfifuration,
   EmailConfiguration,
