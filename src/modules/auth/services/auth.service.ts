@@ -34,55 +34,6 @@ export class AuthService {
     private readonly redisTokenBlacklistService: RedisTokenBlacklistService,
   ) {}
 
-  async testDatabaseConnection() {
-    try {
-      // Simple query to test database connection
-      const result = await this.userDb.query('SELECT 1 as test');
-      console.log('✅ Database connection test successful:', result);
-      return result;
-    } catch (error) {
-      console.error('❌ Database connection test failed:', error);
-      throw error;
-    }
-  }
-
-  async getUserCount() {
-    try {
-      const count = await this.userDb.count();
-      console.log('✅ User count query successful:', count);
-      return count;
-    } catch (error) {
-      console.error('❌ User count query failed:', error);
-      throw error;
-    }
-  }
-
-  async testWriteOperation() {
-    try {
-      // Create a temporary test user to verify write operations
-      const testUser = this.userDb.create({
-        name: 'TEST_USER_' + Date.now(),
-        email: 'test_' + Date.now() + '@test.com',
-        password: 'test123',
-        role: Role.CONSULTANT,
-        user_status: UserStatus.PENDING,
-        is_verified: false
-      });
-      
-      const savedUser = await this.userDb.save(testUser);
-      console.log('✅ Write test successful - User ID:', savedUser.id);
-      
-      // Clean up - delete the test user
-      await this.userDb.remove(savedUser);
-      console.log('✅ Test user cleaned up');
-      
-      return { success: true, testUserId: savedUser.id };
-    } catch (error) {
-      console.error('❌ Write test failed:', error);
-      throw error;
-    }
-  }
-
   async getAllUsers() {
     try {
       const users = await this.userDb.find({
@@ -96,152 +47,38 @@ export class AuthService {
     }
   }
 
-  // async register(dto: RegisterDto) {
-  //   //Check if the user exist or not in our database
-  //   const userExist = await this.userDb.findOne({
-  //     where: { email: dto.email },
-  //   });
-  //   if (userExist) {
-  //     throw new HttpException('user already exist', HttpStatus.BAD_REQUEST);
-  //   }
-  //   // 2) hash his password
-  //   const hashed = await bcrypt.hash(dto.password, 10);
-
-  //   // 3) create user instance (not yet saved)
-  //   const user = await this.userDb.create({ ...dto, password: hashed });
-
-  //   // 4) generate a one-time verification token
-  //   const verification_token = crypto.randomBytes(32).toString('hex');
-  //   const verification_token_expiry = new Date(Date.now() + 24 * 3600_000); // 24h from now
-
-  //   user.verification_token = verification_token;
-  //   user.verification_token_expiry = verification_token_expiry;
-
-  //   // 5) save the user (with token + expiry)
-  //   await this.userDb.save(user);
-
-  //   // 6) send the “verify your email” link
-  //   await this.emailService.sendVerificationLink(user.email, verification_token);
-
-  //   // 7) respond with created and check email to verify
-  //   throw new HttpException(
-  //     'User created – please check your email to verify.',
-  //     HttpStatus.CREATED,
-  //   );
-  // }
-
-
   async register(dto: RegisterDto) {
-    try {
-      console.log('🔍 Starting registration process for:', dto.email);
-      console.log('🌍 Environment:', process.env.NODE_ENV);
-      console.log('📊 Database config check:', {
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
-        database: process.env.DB_NAME,
-        ssl: process.env.NODE_ENV === 'production'
-      });
-      
-      // Check if the user exists in our database
-      console.log('🔍 Executing findOne query for email:', dto.email);
-      const userExist = await this.userDb.findOne({
-        where: { email: dto.email },
-      });
-      
-      console.log('🔍 findOne query result:', {
-        userExist: userExist ? 'USER_FOUND' : 'NO_USER',
-        userExistDetails: userExist ? {
-          id: userExist.id,
-          email: userExist.email,
-          name: userExist.name
-        } : null
-      });
-      
-      if (userExist) {
-        console.log('❌ User already exists:', dto.email);
-        console.log('❌ Existing user details:', {
-          id: userExist.id,
-          email: userExist.email,
-          name: userExist.name
-        });
-        throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
-      }
-  
-      console.log('✅ User does not exist, proceeding with registration');
-  
-      // Hash the password
-      const hashed = await bcrypt.hash(dto.password, 10);
-      console.log('🔐 Password hashed successfully');
-  
-      // Create user instance (not yet saved)
-      const user = this.userDb.create({ 
-        ...dto, 
-        password: hashed,
-        user_status: UserStatus.PENDING,
-        is_verified: false
-      });
-  
-      // Generate a one-time verification token
-      const verification_token = crypto.randomBytes(32).toString('hex');
-      const verification_token_expiry = new Date(Date.now() + 24 * 3600_000); // 24h from now
-  
-      user.verification_token = verification_token;
-      user.verification_token_expiry = verification_token_expiry;
-  
-      console.log('💾 Attempting to save user to database...');
-  
-      // Save the user (with token + expiry)
-      const savedUser = await this.userDb.save(user);
-      
-      console.log('✅ User saved successfully with ID:', savedUser.id);
-  
-      // Send the "verify your email" link
-      let emailSent = false;
-      try {
-        await this.emailService.sendVerificationLink(user.email, verification_token);
-        console.log('📧 Verification email sent successfully');
-        emailSent = true;
-      } catch (emailError) {
-        console.error('❌ Email sending failed:', emailError);
-        // Continue even if email fails - user can request resend
-      }
-  
-      // Return success response with user data (excluding sensitive info)
-      const { password, verification_token: token, verification_token_expiry: expiry, ...userResponse } = savedUser;
-      
-      console.log('🎉 Registration completed successfully for:', dto.email);
-      
-      return {
-        success: true,
-        message: 'User created successfully. Please check your email to verify your account.',
-        data: {
-          user: userResponse,
-          emailSent: emailSent
-        }
-      };
-  
-    } catch (error) {
-      console.error('❌ Registration error:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack
-      });
-      
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      
-      // Handle database errors
-      if (error.code === '23505') { // PostgreSQL unique constraint violation
-        throw new HttpException('User with this email already exists', HttpStatus.BAD_REQUEST);
-      }
-      
-      throw new HttpException(
-        'Registration failed. Please try again.',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+    //Check if the user exist or not in our database
+    const userExist = await this.userDb.findOne({
+      where: { email: dto.email },
+    });
+    if (userExist) {
+      throw new HttpException('user already exist', HttpStatus.BAD_REQUEST);
     }
+    // 2) hash his password
+    const hashed = await bcrypt.hash(dto.password, 10);
+
+    // 3) create user instance (not yet saved)
+    const user = await this.userDb.create({ ...dto, password: hashed });
+
+    // 4) generate a one-time verification token
+    const verification_token = crypto.randomBytes(32).toString('hex');
+    const verification_token_expiry = new Date(Date.now() + 24 * 3600_000); // 24h from now
+
+    user.verification_token = verification_token;
+    user.verification_token_expiry = verification_token_expiry;
+
+    // 5) save the user (with token + expiry)
+    await this.userDb.save(user);
+
+    // 6) send the “verify your email” link
+    await this.emailService.sendVerificationLink(user.email, verification_token);
+
+    // 7) respond with created and check email to verify
+    throw new HttpException(
+      'User created – please check your email to verify.',
+      HttpStatus.CREATED,
+    );
   }
 
   async login(dto: LoginDto) {
