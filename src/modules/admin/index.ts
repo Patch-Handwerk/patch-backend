@@ -1,4 +1,4 @@
-export * from "./dtos"
+export * from "./dto"
 export * from "./enums"
 export * from "./controllers"
 export * from "./services"

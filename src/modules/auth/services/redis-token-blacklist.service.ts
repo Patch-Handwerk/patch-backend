@@ -31,15 +31,12 @@ export class RedisTokenBlacklistService implements OnModuleDestroy {
 
     // Handle Redis events
     this.redisClient.on('error', (err) => {
-      console.error('Redis Client Error:', err);
     });
 
     this.redisClient.on('connect', () => {
-      console.log('Redis Client Connected');
     });
 
     this.redisClient.on('ready', () => {
-      console.log('Redis Client Ready');
     });
   }
 
@@ -62,9 +59,7 @@ export class RedisTokenBlacklistService implements OnModuleDestroy {
       
       // Store only the hash, never the actual token
       await this.redisClient.setEx(key, ttl, 'revoked');
-      console.log(`Token hash blacklisted with TTL: ${ttl}s`);
     } catch (error) {
-      console.error('Error adding token to blacklist:', error);
       throw new Error('Failed to blacklist token');
     }
   }

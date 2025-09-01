@@ -39,10 +39,8 @@ export class AuthService {
       const users = await this.userDb.find({
         select: ['id', 'email', 'name', 'role', 'user_status', 'is_verified']
       });
-      console.log('📊 All users in database:', users);
       return users;
     } catch (error) {
-      console.error('❌ Failed to get all users:', error);
       throw error;
     }
   }
@@ -83,9 +81,9 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     // Define admin email (and optionally password) from env
-    const adminName = this.configService.get<string>('ADMIN_NAME');
-    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-    const adminPassword = this.configService.get<any>('ADMIN_PASSWORD');
+    const adminName = this.configService.get<string>('name');
+    const adminEmail = this.configService.get<string>('email');
+    const adminPassword = this.configService.get<any>('password');
 
     let user = await this.userDb.findOne({ where: { email: dto.email } });
 
@@ -200,7 +198,6 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
-    console.log(token, 'token');
     const user = await this.userDb.findOne({
       where: { verification_token: token },
     });
@@ -221,14 +218,12 @@ export class AuthService {
   }
 
   async refresh(refresh_token: string) {
-    console.log(refresh_token, 'refresCHeck');
     try {
       // 1) Verify the refresh token signature & expiry
       const payload = this.jwtService.verify(refresh_token, {
         secret: this.configService.get<string>('refreshTokenSecret'),
       });
 
-      console.log(payload, 'checkPayload');
 
       // 2) Find the user and ensure they have a stored (hashed) refresh token
       const user = await this.userDb.findOne({ where: { id: payload.id } });
@@ -238,7 +233,7 @@ export class AuthService {
 
       // 3) Compare the incoming token to the hashed one in DB
       const isMatch = await bcrypt.compare(refresh_token, user.refresh_token);
-      console.log(isMatch, 'isMatch');
+     
       if (!isMatch) {
         throw new UnauthorizedException('Access Denied');
       }
@@ -267,16 +262,15 @@ export class AuthService {
     }
   }
   async logout(userId: number, accessToken?: string) {
-    console.log(userId, 'userId');
     
     // Blacklist the access token in Redis if provided
     if (accessToken) {
       try {
         await this.redisTokenBlacklistService.addToBlacklist(accessToken);
-        console.log('Access token blacklisted successfully');
+      
       } catch (error) {
         console.error('Failed to blacklist token:', error);
-        // Continue with logout even if blacklisting fails
+        
       }
     }
     

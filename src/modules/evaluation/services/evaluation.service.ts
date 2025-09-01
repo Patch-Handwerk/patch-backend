@@ -1,12 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Phase } from 'src/database/entities/phase.entity';
 import { SubPhase } from 'src/database/entities/sub_phase.entity';
-import { Question } from 'src/database/entities/questions.entity';
-import { Answer } from 'src/database/entities/answers.entity';
 import { Results } from '../../../database/entities/results.entity';
-import { Stage } from 'src/database/entities/stage.entity';
 import { User } from 'src/database/entities/user.entity';
 import { CalculateProgressDto } from '../dto/calculate-progress.dto';
 import { HttpException } from '@nestjs/common';
@@ -18,26 +15,19 @@ export class ClientEvaluationService {
     private phaseRepo: Repository<Phase>,
     @InjectRepository(SubPhase)
     private subPhaseRepo: Repository<SubPhase>,
-    @InjectRepository(Question)
-    private questionRepo: Repository<Question>,
-    @InjectRepository(Answer)
-    private answerRepo: Repository<Answer>,
     @InjectRepository(Results)
     private resultsRepo: Repository<Results>,
-    @InjectRepository(Stage)
-    private stageRepo: Repository<Stage>,
     @InjectRepository(User)
     private userRepo: Repository<User>,
-    private dataSource: DataSource,
-  ) {}
+  ) { }
 
   async progressCalculation(calculateData: CalculateProgressDto, userId: number) {
     try {
       const { phaseName, subphaseName, questionId, questionText, selectedAnswers } = calculateData;
-      
+
       // Use userId from JWT token
       // const tenantId = userId;
-      
+
       // Validate input data
       if (!selectedAnswers || selectedAnswers.length === 0) {
         throw new BadRequestException('At least one answer must be selected');
@@ -56,35 +46,30 @@ export class ClientEvaluationService {
       // Allow users to submit multiple answers for different questions
       // Check if user already answered this specific question
       const existingProgress = await this.resultsRepo.findOne({
-        where: { 
-          user_id: userId, 
+        where: {
+          user_id: userId,
           question_id: questionId,
           phase_name: phaseName,
-          subphase_name: subphaseName 
+          subphase_name: subphaseName
         }
       });
-      
-      if(existingProgress) {
+
+      if (existingProgress) {
         throw new BadRequestException(`You have already submitted an answer for this question in ${phaseName} - ${subphaseName}`);
       }
 
 
 
-   
+
       // Calculate progress percentage based on selected answers
       const totalPoints = selectedAnswers.reduce((sum, answer) => sum + answer.point, 0);
-      
+
       // Use fixed maximum points for the phase (54 points total)
       const maxPossiblePoints = 54;
-      
+
       // Calculate progress as percentage (0-100) based on 54 total points
       const progressPercentage = Math.round((totalPoints / maxPossiblePoints) * 100);
       const progressPercentageString = progressPercentage + `%`;
-      
-      console.log('Selected Answers Points:', selectedAnswers.map(a => a.point));
-      console.log('Total Selected Points:', totalPoints);
-      console.log('Max Possible Points for Phase:', maxPossiblePoints);
-      console.log('Progress Percentage:', progressPercentage+ `%`);
 
       // Group answers by level to find dominant level
       const levelGroups = {};
@@ -100,7 +85,7 @@ export class ClientEvaluationService {
         }
         levelGroups[level].count++;
         levelGroups[level].totalPoints += answer.point;
-        
+
         // Track stages and descriptions for this level
         if (answer.stage) {
           levelGroups[level].stages[answer.stage] = (levelGroups[level].stages[answer.stage] || 0) + 1;
@@ -118,7 +103,7 @@ export class ClientEvaluationService {
       Object.keys(levelGroups).forEach(level => {
         const levelData = levelGroups[level];
         const levelNum = parseInt(level);
-        
+
         // Prioritize higher levels first
         if (levelNum > dominantLevel) {
           dominantLevel = levelNum;
@@ -159,7 +144,7 @@ export class ClientEvaluationService {
       }
 
       // Progress percentage is already calculated above
-   
+
 
 
       // Save to database with progress as percentage
@@ -195,8 +180,6 @@ export class ClientEvaluationService {
         selectedAnswersCount: selectedAnswers.length,
         progress: progressPercentage, // Progress as percentage (0-100)
       };
-      
-      console.log('Response being sent:', JSON.stringify(response, null, 2));
       return response;
 
     } catch (error) {
@@ -204,15 +187,15 @@ export class ClientEvaluationService {
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       // Log the error for debugging
       console.error('Progress calculation error:', error);
-      
+
       // Throw appropriate HTTP exception
       if (error.code === 'ER_NO_SUCH_TABLE' || error.code === 'ER_ACCESS_DENIED_ERROR') {
         throw new InternalServerErrorException('Database connection error');
       }
-      
+
       throw new InternalServerErrorException('Failed to calculate progress');
     }
   }
@@ -293,7 +276,7 @@ export class ClientEvaluationService {
 
       // Sort answers by point value and group by level
       const sortedAnswers = subphase.question.answers.sort((a, b) => a.point - b.point);
-      
+
       // Group answers by level for better organization
       const answersByLevel = {};
       sortedAnswers.forEach(answer => {
@@ -357,12 +340,12 @@ export class ClientEvaluationService {
 
       // Sort subphases by ID
       const sortedSubphases = phase.subPhases.sort((a, b) => a.id - b.id);
-      
+
       const subphasesWithData = sortedSubphases.map(subphase => {
         const answersByLevel = {};
         // Sort answers by point value
         const sortedAnswers = subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
-        
+
         sortedAnswers.forEach(answer => {
           const level = answer.level || 1;
           if (!answersByLevel[level]) {
@@ -465,12 +448,12 @@ export class ClientEvaluationService {
       const phasesWithData = phases.map(phase => {
         // Sort subphases by ID
         const sortedSubphases = phase.subPhases.sort((a, b) => a.id - b.id);
-        
+
         const subphasesWithData = sortedSubphases.map(subphase => {
           const answersByLevel = {};
           // Sort answers by point value
           const sortedAnswers = subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
-          
+
           sortedAnswers.forEach(answer => {
             const level = answer.level || 1;
             if (!answersByLevel[level]) {

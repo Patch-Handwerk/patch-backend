@@ -98,9 +98,7 @@ export default class InitialSurveyDataSeeder {
         const question = await getOrCreateQuestion(subPhaseData.question.text, subPhase, subPhaseData.question.sortId);
         
         // Create answers for each level in this question
-        for (const answerLevel of subPhaseData.question.answerLevels) {
-          console.log(`Creating answers for ${subPhaseData.name} - Level ${answerLevel.level}: ${answerLevel.description} (${answerLevel.stage})`);
-          
+        for (const answerLevel of subPhaseData.question.answerLevels) {          
           for (const answerData of answerLevel.answers) {
             await getOrCreateAnswer(
               answerData.text, 
