@@ -5,7 +5,16 @@ import { RequestWithUser } from 'src/config/types/RequestWithUser';
 import { LoginDto,RegisterDto, ForgotPasswordDto,RefreshTokenDto,ResetPasswordDto } from '../dto';
 import { AuthService } from '../services';
 import { JwtRefreshGuard, JwtBlacklistGuard } from 'src/common';
-import { LoginResponseDto, RegisterResponseDto } from '../dto/auth-response.dto';
+import { 
+  LoginResponseDto, 
+  RegisterResponseDto, 
+  GetAllUsersResponseDto,
+  ForgotPasswordResponseDto,
+  ResetPasswordResponseDto,
+  VerifyEmailResponseDto,
+  RefreshTokenResponseDto,
+  LogoutResponseDto
+} from '../dto/auth-response.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -20,27 +29,7 @@ export class AuthController {
   @ApiResponse({ 
     status: 200, 
     description: 'List of all users retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Users retrieved successfully' },
-        data: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'number', example: 1 },
-              email: { type: 'string', example: 'user@example.com' },
-              name: { type: 'string', example: 'John Doe' },
-              role: { type: 'string', example: 'consultant' },
-              user_status: { type: 'string', example: 'pending' },
-              is_verified: { type: 'boolean', example: false }
-            }
-          }
-        }
-      }
-    }
+    type: GetAllUsersResponseDto
   })
   @Get('users/list')
   async getAllUsers() {
@@ -67,31 +56,7 @@ export class AuthController {
   @ApiResponse({ 
     status: 201, 
     description: 'User registered successfully. A verification email has been sent.',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'User created successfully. Please check your email to verify your account.' },
-        data: {
-          type: 'object',
-          properties: {
-            user: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                name: { type: 'string', example: 'John Doe' },
-                email: { type: 'string', example: 'john.doe@example.com' },
-                role: { type: 'string', example: 'USER' },
-                user_status: { type: 'string', example: 'PENDING' },
-                is_verified: { type: 'boolean', example: false },
-                createdAt: { type: 'string', example: '2025-08-30T01:39:34.123Z' }
-              }
-            },
-            emailSent: { type: 'boolean', example: true }
-          }
-        }
-      }
-    }
+    type: RegisterResponseDto
   })
   @ApiResponse({ status: 400, description: 'Validation error or user already exists' })
   @ApiResponse({ status: 500, description: 'Internal server error during registration' })
@@ -122,7 +87,11 @@ export class AuthController {
     summary: 'Request password reset email',
     description: 'Sends a password reset email to the user with a secure token. The user can use this token to reset their password.'
   })
-  @ApiResponse({ status: 200, description: 'Password reset email sent successfully.' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Password reset email sent successfully.',
+    type: ForgotPasswordResponseDto
+  })
   @ApiResponse({ status: 404, description: 'User not found with the provided email.' })
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -134,7 +103,11 @@ export class AuthController {
     summary: 'Reset password using token',
     description: 'Resets the user password using the token received via email. The token must be valid and not expired.'
   })
-  @ApiResponse({ status: 200, description: 'Password reset successfully.' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Password reset successfully.',
+    type: ResetPasswordResponseDto
+  })
   @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto) {
@@ -146,7 +119,11 @@ export class AuthController {
     summary: 'Verify user email',
     description: 'Verifies the user email address using the token sent during registration. This endpoint is typically accessed via a link in the verification email.'
   })
-  @ApiResponse({ status: 200, description: 'Email verified successfully.' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Email verified successfully.',
+    type: VerifyEmailResponseDto
+  })
   @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
   @ApiQuery({ name: 'token', description: 'Email verification token', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
   @Get('verify-email')
@@ -160,7 +137,11 @@ export class AuthController {
     summary: 'Refresh JWT tokens',
     description: 'Refreshes the access token using a valid refresh token. This endpoint is used when the access token expires to get a new one without requiring the user to login again.'
   })
-  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully.' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Tokens refreshed successfully.',
+    type: RefreshTokenResponseDto
+  })
   @ApiResponse({ status: 401, description: 'Invalid refresh token.' })
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
@@ -173,7 +154,11 @@ export class AuthController {
     summary: 'Logout user',
     description: 'Logs out the user by invalidating their access token and clearing refresh tokens. This endpoint requires a valid JWT token in the Authorization header.'
   })
-  @ApiResponse({ status: 200, description: 'Logged out successfully.' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Logged out successfully.',
+    type: LogoutResponseDto
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   @UseGuards(JwtBlacklistGuard)
   @Post('logout')

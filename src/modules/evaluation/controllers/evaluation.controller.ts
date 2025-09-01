@@ -9,7 +9,10 @@ import {
   SubphaseResponseDto, 
   QuestionResponseDto, 
   ProgressResponseDto,
-  CompletePhaseResponseDto
+  CompletePhaseResponseDto,
+  CompleteAssessmentResponseDto,
+  UserProgressResponseDto,
+  CalculateProgressResponseDto
 } from '../dto/evaluation-response.dto';
 
 @ApiTags('evaluation')
@@ -90,7 +93,11 @@ export class EvaluationController {
     summary: 'Get complete assessment data (all phases)',
     description: 'Retrieves complete assessment data for all phases including subphases, questions, and answers. This endpoint provides the entire assessment structure in a single request.'
   })
-  @ApiResponse({ status: 200, description: 'Complete assessment data retrieved successfully' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Complete assessment data retrieved successfully',
+    type: CompleteAssessmentResponseDto
+  })
   async getCompleteAssessment() {
     return this.evaluationService.getCompleteAssessment();
   }
@@ -105,7 +112,7 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 201, 
     description: 'Progress calculated and stored successfully',
-    type: ProgressResponseDto
+    type: CalculateProgressResponseDto
   })
   @ApiResponse({ status: 400, description: 'Invalid request data or validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
@@ -127,7 +134,7 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 200, 
     description: 'User progress retrieved successfully',
-    type: [ProgressResponseDto]
+    type: UserProgressResponseDto
   })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   @ApiResponse({ status: 404, description: 'No progress data found for the user' })

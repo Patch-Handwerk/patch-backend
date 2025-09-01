@@ -19,7 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { Role } from '../enums';
 import { Roles, RolesGuard } from 'src/common';
-import { UpdateUserStatusDto, GetUsersDto } from '../dto';
+import { UpdateUserStatusDto, GetUsersDto, GetUsersResponseDto, UpdateUserStatusResponseDto } from '../dto';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from '../services';
 
@@ -39,6 +39,7 @@ export class AdminController {
   @ApiResponse({
     status: 200,
     description: 'List of users returned successfully.',
+    type: GetUsersResponseDto
   })
   @ApiResponse({ status: 401, description: 'Unauthorized - Admin access required' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
@@ -67,6 +68,7 @@ export class AdminController {
   @ApiResponse({
     status: 200,
     description: 'User status updated successfully.',
+    type: UpdateUserStatusResponseDto
   })
   @ApiResponse({ status: 400, description: 'Invalid status value or validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Admin access required' })

@@ -127,3 +127,42 @@ export class CompleteSubphaseResponseDto extends SubphaseResponseDto {
   @ApiProperty({ type: [QuestionResponseDto] })
   questions: QuestionResponseDto[];
 }
+
+export class CompleteAssessmentResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Complete assessment data retrieved successfully' })
+  message: string;
+
+  @ApiProperty({ 
+    type: 'array',
+    items: { $ref: '#/components/schemas/CompletePhaseResponseDto' }
+  })
+  data: CompletePhaseResponseDto[];
+}
+
+export class UserProgressResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'User progress retrieved successfully' })
+  message: string;
+
+  @ApiProperty({ 
+    type: 'array',
+    items: { $ref: '#/components/schemas/ProgressResponseDto' }
+  })
+  data: ProgressResponseDto[];
+}
+
+export class CalculateProgressResponseDto {
+  @ApiProperty({ example: true })
+  success: boolean;
+
+  @ApiProperty({ example: 'Progress calculated and stored successfully' })
+  message: string;
+
+  @ApiProperty({ type: ProgressResponseDto })
+  data: ProgressResponseDto;
+}
