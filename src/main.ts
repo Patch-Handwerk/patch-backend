@@ -1,13 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { RootModule } from './root.module';
-import {ValidationPipe} from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './core/exceptions';
 import { ResponseInterceptor } from './common/interceptors';
 
 async function bootstrap() {
   const app = await NestFactory.create(RootModule);
-  
+
   // Enhanced CORS configuration for production
   app.enableCors({
     origin: true, // Allow all origins in development/production
@@ -15,12 +15,12 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
   });
-  
+
   // Handle favicon requests to prevent 404 errors
   app.use('/favicon.ico', (req: any, res: any) => {
     res.status(204).end(); // No content response
   });
-  
+
   // Simple health check endpoint
   app.use('/health', (req: any, res: any) => {
     res.json({
@@ -29,13 +29,13 @@ async function bootstrap() {
       environment: process.env.NODE_ENV || 'development'
     });
   });
-  
+
   // Global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
-  
+
   // Global response interceptor for standardized responses
   app.useGlobalInterceptors(new ResponseInterceptor());
-  
+
   const config = new DocumentBuilder()
     .setTitle('Patch Backend API')
     .setDescription(`
@@ -163,18 +163,23 @@ For technical support or questions, please contact the Patch team.
     .addServer('https://patch-backend-i898.onrender.com', 'Production Server')
     .addServer('http://localhost:3001', 'Local Development Server')
     .build();
- 
+
   const document = SwaggerModule.createDocument(app, config);
 
-  SwaggerModule.setup('api', app, document); 
+  SwaggerModule.setup('api', app, document);
+
+
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.get('/', (req, res) => res.redirect('/api'));
+  
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted:true,
+    forbidNonWhitelisted: true,
     transform: true
   }));
   const port = process.env.PORT ?? 3002;
   const host = process.env.HOST ?? '0.0.0.0';
-  
+
   try {
     await app.listen(port, host);
     console.log(`🚀 Application is running on: http://${host}:${port}`);

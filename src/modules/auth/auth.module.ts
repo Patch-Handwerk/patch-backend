@@ -31,6 +31,6 @@ import { JwtBlacklistGuard } from '../../common/guards/jwt-blacklist.guard';
   ],
   controllers: [AuthController],
   providers:   [AuthService, JwtStrategy, JwtRefreshStrategy, RedisTokenBlacklistService, JwtBlacklistGuard],
-  exports: [RedisTokenBlacklistService],
+  exports: [RedisTokenBlacklistService, JwtStrategy],
 })
 export class AuthModule {}

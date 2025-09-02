@@ -18,15 +18,14 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { Role } from '../enums';
-import { Roles, RolesGuard } from 'src/common';
-import { UpdateUserStatusDto, GetUsersDto, GetUsersResponseDto, UpdateUserStatusResponseDto } from '../dto';
-import { AuthGuard } from '@nestjs/passport';
+import { Roles, RolesGuard, JwtAuthGuard } from 'src/common';
+import { UpdateUserStatusDto, GetUsersDto } from '../dto';
 import { AdminService } from '../services';
 
 @ApiTags('admin') 
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('admin')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
@@ -39,21 +38,20 @@ export class AdminController {
   @ApiResponse({
     status: 200,
     description: 'List of users returned successfully.',
-    type: GetUsersResponseDto
   })
   @ApiResponse({ status: 401, description: 'Unauthorized - Admin access required' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   @ApiQuery({
     name: 'status',
     required: false,
-    description: 'Filter users by status (PENDING, ACTIVE, INACTIVE)',
-    example: 'ACTIVE'
+    description: 'Filter users by status (Pending, Approved, Rejected)',
+    example: 'Pending'
   })
   @ApiQuery({
     name: 'role',
     required: false,
-    description: 'Filter users by role (USER, ADMIN)',
-    example: 'USER'
+    description: 'Filter users by role (craftsman, consultant, admin)',
+    example: 'craftsman'
   })
   @Get('users')
   getUsers(@Query() filterDto: GetUsersDto) {
@@ -68,8 +66,7 @@ export class AdminController {
   @ApiResponse({
     status: 200,
     description: 'User status updated successfully.',
-    type: UpdateUserStatusResponseDto
-  })
+    })
   @ApiResponse({ status: 400, description: 'Invalid status value or validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Admin access required' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
