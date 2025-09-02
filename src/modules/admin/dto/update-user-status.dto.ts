@@ -1,14 +1,15 @@
-import { IsEnum } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty } from 'class-validator';
 import { UserStatus } from '../enums';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserStatusDto {
   @ApiProperty({
-    description: 'New status for the user',
-    example: 'ACTIVE',
+    description: 'User status',
+    example: UserStatus.APPROVED,
     enum: UserStatus,
     enumName: 'UserStatus'
   })
+  @IsNotEmpty()
   @IsEnum(UserStatus)
   user_status: UserStatus;
 }

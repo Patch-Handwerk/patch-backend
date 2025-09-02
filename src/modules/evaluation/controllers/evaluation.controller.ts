@@ -4,19 +4,9 @@ import { ClientEvaluationService } from '../services/evaluation.service';
 import { CalculateProgressDto } from '../dto/calculate-progress.dto';
 import { JwtBlacklistGuard } from 'src/common/guards/jwt-blacklist.guard';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
-import { 
-  PhaseResponseDto, 
-  SubphaseResponseDto, 
-  QuestionResponseDto, 
-  ProgressResponseDto,
-  CompletePhaseResponseDto,
-  CompleteAssessmentResponseDto,
-  UserProgressResponseDto,
-  CalculateProgressResponseDto
-} from '../dto/evaluation-response.dto';
 
 @ApiTags('evaluation')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('evaluation')
 export class EvaluationController {
   constructor(private readonly evaluationService: ClientEvaluationService) {}
@@ -30,7 +20,6 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 200, 
     description: 'Phases retrieved successfully',
-    type: [PhaseResponseDto]
   })
   async getAllPhases() {
     return this.evaluationService.getAllPhases();
@@ -45,7 +34,6 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 200, 
     description: 'Subphases retrieved successfully',
-    type: [SubphaseResponseDto]
   })
   @ApiResponse({ status: 404, description: 'Phase not found' })
   @ApiParam({ name: 'phaseId', description: 'ID of the phase to get subphases for', example: 1 })
@@ -62,7 +50,6 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 200, 
     description: 'Question and answers retrieved successfully',
-    type: QuestionResponseDto
   })
   @ApiResponse({ status: 404, description: 'Subphase or question not found' })
   @ApiParam({ name: 'subphaseId', description: 'ID of the subphase to get question for', example: 1 })
@@ -79,7 +66,6 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 200, 
     description: 'Complete phase data retrieved successfully',
-    type: CompletePhaseResponseDto
   })
   @ApiResponse({ status: 404, description: 'Phase not found' })
   @ApiParam({ name: 'phaseId', description: 'ID of the phase to get complete data for', example: 1 })
@@ -96,7 +82,6 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 200, 
     description: 'Complete assessment data retrieved successfully',
-    type: CompleteAssessmentResponseDto
   })
   async getCompleteAssessment() {
     return this.evaluationService.getCompleteAssessment();
@@ -112,7 +97,6 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 201, 
     description: 'Progress calculated and stored successfully',
-    type: CalculateProgressResponseDto
   })
   @ApiResponse({ status: 400, description: 'Invalid request data or validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
@@ -134,7 +118,6 @@ export class EvaluationController {
   @ApiResponse({ 
     status: 200, 
     description: 'User progress retrieved successfully',
-    type: UserProgressResponseDto
   })
   @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
   @ApiResponse({ status: 404, description: 'No progress data found for the user' })
