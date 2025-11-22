@@ -177,24 +177,25 @@ For technical support or questions, please contact the Patch team.
     forbidNonWhitelisted: true,
     transform: true
   }));
-  const port = process.env.PORT ?? 3002;
-  const host = process.env.HOST ?? '0.0.0.0';
+  const port = Number(process.env.PORT ?? 3001);
+  const host = process.env.HOST ?? 'localhost';
 
   try {
     await app.listen(port, host);
-    console.log(`🚀 Application is running on: http://${host}:${port}`);
-    console.log(`📚 Swagger documentation available at: http://${host}:${port}/api`);
+    console.log(`[app] Server listening at http://${host}:${port}`);
+    console.log(`[app] Swagger UI available at http://${host}:${port}/api`);
   } catch (error) {
     if (error.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${port} is already in use. Please try one of the following:`);
-      console.error(`   1. Kill the process using port ${port}:`);
-      console.error(`      Windows: netstat -ano | findstr :${port} && taskkill /PID <PID> /F`);
-      console.error(`      Linux/Mac: lsof -ti:${port} | xargs kill -9`);
-      console.error(`   2. Use a different port by setting PORT environment variable`);
-      console.error(`   3. Wait a few seconds and try again`);
+      console.error(`[app] Port ${port} is already in use.`);
+      console.error(`[app] Options:`);
+      console.error(`[app]  1. Terminate the process that is using port ${port}.`);
+      console.error(`[app]     Windows: netstat -ano | findstr :${port} && taskkill /PID <PID> /F`);
+      console.error(`[app]     macOS/Linux: lsof -ti:${port} | xargs kill -9`);
+      console.error(`[app]  2. Set the PORT environment variable to a different value.`);
+      console.error(`[app]  3. Wait a few seconds and retry.`);
       process.exit(1);
     } else {
-      console.error('❌ Failed to start application:', error);
+      console.error('[app] Failed to start application.', error);
       process.exit(1);
     }
   }

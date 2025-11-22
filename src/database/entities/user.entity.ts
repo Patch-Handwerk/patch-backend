@@ -41,4 +41,14 @@ export class User {
   //Add user entity for REFRESH TOKEN module
   @Column({ type: 'text', nullable: true })
   refresh_token: string | null;
+
+  //Add user entity for OAuth module
+  @Column({type: 'varchar', nullable: true})
+  provider: string | null; // OAuth provider name (e.g., 'google', 'facebook')
+
+  @Column({type: 'varchar', nullable: true})
+  provider_id: string | null; // Unique ID from OAuth provider (e.g., '1234567890')
+
+  @Column({type: 'varchar', nullable: true})
+  avatar: string | null; //profile picture url (e.g., 'https://example.com/avatar.jpg')
 }
