@@ -10,10 +10,14 @@ async function bootstrap() {
 
   // Enhanced CORS configuration for production
   app.enableCors({
-    origin: true, // Allow all origins in development/production
+    origin: process.env.CORS_ORIGIN 
+      ? process.env.CORS_ORIGIN.split(',') 
+      : true, // Allow all origins if not specified
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Handle favicon requests to prevent 404 errors
