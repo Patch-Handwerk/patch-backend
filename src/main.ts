@@ -178,7 +178,9 @@ For technical support or questions, please contact the Patch team.
     transform: true
   }));
   const port = Number(process.env.PORT ?? 3001);
-  const host = process.env.HOST ?? 'localhost';
+  // Bind to 0.0.0.0 in production (Render requires this) or use HOST env var if set
+  // Use localhost only in development when explicitly set
+  const host = process.env.HOST ?? (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost');
 
   try {
     await app.listen(port, host);
