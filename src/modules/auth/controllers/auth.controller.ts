@@ -1,10 +1,17 @@
 import { Controller, Post, Body, Get, Query, UseGuards,Req,Res, HttpException, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
 import { LoginDto,RegisterDto, ForgotPasswordDto,RefreshTokenDto,ResetPasswordDto } from '../dto';
 import { AuthService } from '../services';
-import { JwtRefreshGuard, JwtBlacklistGuard } from 'src/common';
+import {
+  JwtRefreshGuard,
+  JwtBlacklistGuard,
+  GoogleAuthGuard,
+  LinkedInAuthGuard,
+  GitHubAuthGuard,
+} from 'src/common';
 import { 
   LoginResponseDto, 
   RegisterResponseDto, 
@@ -19,7 +26,10 @@ import {
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // List all users in database
   @ApiOperation({ 
@@ -176,5 +186,164 @@ export class AuthController {
     await this.authService.logout(req.user.id, accessToken);
 
     return { message: 'Logged out successfully' };
+  }
+
+  // ==================== OAuth Endpoints ====================
+
+  // Google OAuth - Initiate
+  @ApiOperation({ 
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects user to Google login page. Pass the selected role (consultant/craftsman) as a query parameter.'
+  })
+  @ApiQuery({ name: 'role', required: false, description: 'User role: consultant or craftsman', example: 'consultant' })
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth(@Query('role') role: string) {
+    // Guard automatically redirects to Google OAuth
+    // The role will be passed through OAuth state
+  }
+
+  // Google OAuth - Callback
+  @ApiOperation({ 
+    summary: 'Google OAuth callback',
+    description: 'Handles the callback from Google after user authenticates. Creates or updates user and redirects to frontend with tokens.'
+  })
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthCallback(
+    @Req() req: any,
+    @Res() res: Response,
+    @Query('state') state: string,
+  ) {
+    try {
+      // req.user contains normalized OAuth data from GoogleStrategy
+      const result = await this.authService.oauthLogin(req.user, state);
+      
+      // Redirect to frontend with tokens
+      const frontendUrl = this.configService.get<string>('frontendRedirectUrl');
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${result.accessToken}&refreshToken=${result.refresh_token}&role=${result.publicUser.role}`;
+      
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      // On error, redirect to frontend error page
+      const frontendUrl = this.configService.get<string>('frontendRedirectUrl');
+      return res.redirect(`${frontendUrl}/auth/error?message=${error.message}`);
+    }
+  }
+
+  // LinkedIn OAuth - Initiate
+  @ApiOperation({ 
+    summary: 'Initiate LinkedIn OAuth login',
+    description: 'Redirects user to LinkedIn login page. Pass the selected role (consultant/craftsman) as a query parameter.'
+  })
+  @ApiQuery({ name: 'role', required: false, description: 'User role: consultant or craftsman', example: 'consultant' })
+  @Get('linkedin')
+  @UseGuards(LinkedInAuthGuard)
+  async linkedinAuth(@Query('role') role: string) {
+    // Guard automatically redirects to LinkedIn OAuth
+    // The role will be passed through OAuth state
+  }
+
+  // LinkedIn OAuth - Callback
+  @ApiOperation({ 
+    summary: 'LinkedIn OAuth callback',
+    description: 'Handles the callback from LinkedIn after user authenticates. Creates or updates user and redirects to frontend with tokens.'
+  })
+  @Get('linkedin/callback')
+  @UseGuards(LinkedInAuthGuard)
+  async linkedinAuthCallback(
+    @Req() req: any,
+    @Res() res: Response,
+    @Query('state') state: string,
+  ) {
+    try {
+      // req.user contains normalized OAuth data from LinkedInStrategy
+      const result = await this.authService.oauthLogin(req.user, state);
+      
+      // Redirect to frontend with tokens
+      const frontendUrl = this.configService.get<string>('frontendRedirectUrl');
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${result.accessToken}&refreshToken=${result.refresh_token}&role=${result.publicUser.role}`;
+      
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      // On error, redirect to frontend error page
+      const frontendUrl = this.configService.get<string>('frontendRedirectUrl');
+      return res.redirect(`${frontendUrl}/auth/error?message=${error.message}`);
+    }
+  }
+
+  // OAuth Callback Handler (for testing/development)
+  // This endpoint receives tokens from OAuth redirects
+  @ApiOperation({ 
+    summary: 'OAuth callback handler',
+    description: 'Receives OAuth tokens after successful authentication. For testing purposes - in production, handle this in your frontend.'
+  })
+  @ApiQuery({ name: 'token', required: false, description: 'JWT access token' })
+  @ApiQuery({ name: 'refreshToken', required: false, description: 'JWT refresh token' })
+  @ApiQuery({ name: 'role', required: false, description: 'User role' })
+  @Get('callback')
+  async oauthCallback(
+    @Query('token') token: string,
+    @Query('refreshToken') refreshToken: string,
+    @Query('role') role: string,
+  ) {
+    if (!token) {
+      return {
+        success: false,
+        message: 'No token provided',
+      };
+    }
+
+    return {
+      success: true,
+      message: 'OAuth authentication successful!',
+      data: {
+        accessToken: token,
+        refreshToken: refreshToken,
+        role: role,
+      },
+      note: 'In production, handle this callback in your frontend application. Store tokens securely and redirect user to dashboard.',
+    };
+  }
+
+  // GitHub OAuth - Initiate
+  @ApiOperation({ 
+    summary: 'Initiate GitHub OAuth login',
+    description: 'Redirects user to GitHub login page. Pass the selected role (consultant/craftsman) as a query parameter.'
+  })
+  @ApiQuery({ name: 'role', required: false, description: 'User role: consultant or craftsman', example: 'consultant' })
+  @Get('github')
+  @UseGuards(GitHubAuthGuard)
+  async githubAuth(@Query('role') role: string) {
+    // Guard automatically redirects to GitHub OAuth
+    // The role will be passed through OAuth state
+  }
+
+  // GitHub OAuth - Callback
+  @ApiOperation({ 
+    summary: 'GitHub OAuth callback',
+    description: 'Handles the callback from GitHub after user authenticates. Creates or updates user and redirects to frontend with tokens.'
+  })
+  @Get('github/callback')
+  @UseGuards(GitHubAuthGuard)
+  async githubAuthCallback(
+    @Req() req: any,
+    @Res() res: Response,
+    @Query('state') state: string,
+  ) {
+    try {
+      // req.user contains normalized OAuth data from GitHubStrategy
+      const result = await this.authService.oauthLogin(req.user, state);
+      
+      // Redirect to frontend with tokens
+      const frontendUrl = this.configService.get<string>('frontendRedirectUrl');
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${result.accessToken}&refreshToken=${result.refresh_token}&role=${result.publicUser.role}`;
+      
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      // On error, redirect to frontend error page
+      const frontendUrl = this.configService.get<string>('frontendRedirectUrl');
+      return res.redirect(`${frontendUrl}/auth/error?message=${error.message}`);
+    }
   }
 }

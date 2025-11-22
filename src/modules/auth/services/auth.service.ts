@@ -278,4 +278,73 @@ export class AuthService {
     await this.userDb.update(userId, { refresh_token: null });
     return { message: 'Logged out successfully' };
   }
+
+  async oauthLogin(oauthUser: any, role?: string) {
+    // 1. Find user by provider+providerId OR by email (handles account linking)
+    let user = await this.userDb.findOne({
+      where: [
+        { provider: oauthUser.provider, provider_id: oauthUser.providerId },
+        { email: oauthUser.email },
+      ],
+    });
+
+    if (user) {
+      // 2. Existing user found - link OAuth if they originally signed up with email/password
+      if (!user.provider) {
+        user.provider = oauthUser.provider;
+        user.provider_id = oauthUser.providerId;
+        user.avatar = oauthUser.avatar;
+        user.is_verified = true; // OAuth emails are pre-verified
+        await this.userDb.save(user);
+      }
+    } else {
+      // 3. New user - create with OAuth data and selected role
+      user = this.userDb.create({
+        email: oauthUser.email,
+        name: oauthUser.name,
+        provider: oauthUser.provider,
+        provider_id: oauthUser.providerId,
+        avatar: oauthUser.avatar,
+        password: '', // No password for OAuth users
+        role: role === 'craftsman' ? Role.CRAFTSMAN : Role.CONSULTANT, // Use selected role
+        is_verified: true, // OAuth emails are pre-verified
+        user_status: UserStatus.PENDING, // Still needs admin approval
+      });
+      await this.userDb.save(user);
+    }
+
+    // 4. Generate YOUR JWT tokens (not OAuth tokens)
+    const payload = { id: user.id, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+    const refresh_token = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('refreshTokenSecret'),
+      expiresIn: this.configService.get<string>('refreshTokenExpiration'),
+    });
+
+    // 5. Store hashed refresh token in database
+    const hashed = await bcrypt.hash(refresh_token, 10);
+    await this.userDb.update(user.id, { refresh_token: hashed });
+
+    // 6. Return user data and tokens (excluding sensitive fields)
+    function getUserDetails(user: any) {
+      const {
+        password,
+        refresh_token,
+        reset_token,
+        verification_token,
+        ...remainingFields
+      } = user;
+      return remainingFields;
+    }
+
+    const publicUser = getUserDetails(user);
+
+    return {
+      status: 'success',
+      message: 'User authenticated successfully',
+      publicUser,
+      accessToken,
+      refresh_token,
+    };
+  }
 }
