@@ -10,11 +10,14 @@ async function bootstrap() {
 
   // Enhanced CORS configuration for production
   app.enableCors({
-    origin: process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',') 
-      : true, // Allow all origins if not specified
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true, // Allow all origins if not specified
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+    ],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -30,7 +33,7 @@ async function bootstrap() {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
     });
   });
 
@@ -40,9 +43,12 @@ async function bootstrap() {
   // Global response interceptor for standardized responses
   app.useGlobalInterceptors(new ResponseInterceptor());
 
+  const port = Number(process.env.PORT ?? 3001);
+
   const config = new DocumentBuilder()
     .setTitle('Patch Backend API')
-    .setDescription(`
+    .setDescription(
+      `
 # 🚀 Patch Backend API Documentation
 
 Welcome to the Patch Backend API! This documentation provides comprehensive information about all available endpoints, request/response formats, and authentication methods.
@@ -148,7 +154,8 @@ For technical support or questions, please contact the Patch team.
 - **Security**: JWT authentication with token blacklisting
 - **Validation**: Comprehensive input validation
 - **Documentation**: Auto-generated with examples
-    `)
+    `,
+    )
     .setVersion('1.0.0')
     .addTag('auth', 'Authentication & Authorization')
     .addTag('admin', 'Administrative Functions')
@@ -165,26 +172,28 @@ For technical support or questions, please contact the Patch team.
       'JWT-auth',
     )
     .addServer('https://patch-backend-i898.onrender.com', 'Production Server')
-    .addServer('http://localhost:3001', 'Local Development Server')
+    .addServer(`http://localhost:${port}`, 'Local Development Server')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
 
   SwaggerModule.setup('api', app, document);
 
-
   const httpAdapter = app.getHttpAdapter();
   httpAdapter.get('/', (req, res) => res.redirect('/api'));
-  
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true
-  }));
-  const port = Number(process.env.PORT ?? 3001);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   // Bind to 0.0.0.0 in production (Render requires this) or use HOST env var if set
   // Use localhost only in development when explicitly set
-  const host = process.env.HOST ?? (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost');
+  const host =
+    process.env.HOST ??
+    (process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost');
 
   try {
     await app.listen(port, host);
@@ -194,10 +203,16 @@ For technical support or questions, please contact the Patch team.
     if (error.code === 'EADDRINUSE') {
       console.error(`[app] Port ${port} is already in use.`);
       console.error(`[app] Options:`);
-      console.error(`[app]  1. Terminate the process that is using port ${port}.`);
-      console.error(`[app]     Windows: netstat -ano | findstr :${port} && taskkill /PID <PID> /F`);
+      console.error(
+        `[app]  1. Terminate the process that is using port ${port}.`,
+      );
+      console.error(
+        `[app]     Windows: netstat -ano | findstr :${port} && taskkill /PID <PID> /F`,
+      );
       console.error(`[app]     macOS/Linux: lsof -ti:${port} | xargs kill -9`);
-      console.error(`[app]  2. Set the PORT environment variable to a different value.`);
+      console.error(
+        `[app]  2. Set the PORT environment variable to a different value.`,
+      );
       console.error(`[app]  3. Wait a few seconds and retry.`);
       process.exit(1);
     } else {

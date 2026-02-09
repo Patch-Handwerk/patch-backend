@@ -1,7 +1,62 @@
 # Patch Backend
 
-# Run database migrations and seed data
+## Getting Started
+
+### Prerequisites
+
+You need **PostgreSQL** and **Redis** running locally.
+
+#### Using Docker (Recommended)
+```bash
+# PostgreSQL
+docker run -d \
+  --name patch-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=patch_db \
+  -p 5432:5432 \
+  postgres:16
+
+# Redis
+docker run -d \
+  --name patch-redis \
+  -p 6379:6379 \
+  redis:7
+```
+
+#### Using Homebrew (macOS)
+```bash
+brew install postgresql@16 redis
+brew services start postgresql@16
+brew services start redis
+createdb patch_db
+```
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_NAME=patch_db
+
+REDIS_HOST=localhost
+REDIS_PORT=6379
+```
+
+### Setup & Run
+
+```bash
+# Install dependencies
+npm install
+
+# Run database migrations (creates tables)
 npm run migration:run
+
+# Seed evaluation data (phases, questions, answers)
 npm run seed
 
 # Start development server

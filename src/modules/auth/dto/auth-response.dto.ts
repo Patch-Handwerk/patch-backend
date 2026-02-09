@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+// User Response DTOs
 export class UserResponseDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -10,10 +11,16 @@ export class UserResponseDto {
   @ApiProperty({ example: 'john.doe@example.com' })
   email: string;
 
-  @ApiProperty({ example: 'consultant', enum: ['CONSULTANT', 'CRAFTSMAN' , 'ADMIN'] })
+  @ApiProperty({
+    example: 'consultant',
+    enum: ['CONSULTANT', 'CRAFTSMAN', 'ADMIN'],
+  })
   role: string;
 
-  @ApiProperty({ example: 'PENDING', enum: ['PENDING', 'APPROVED', 'REJECTED'] })
+  @ApiProperty({
+    example: 'PENDING',
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+  })
   status: string;
 
   @ApiProperty({ example: '2025-08-30T01:39:34.123Z' })
@@ -21,20 +28,28 @@ export class UserResponseDto {
 }
 
 export class LoginResponseDto {
-  @ApiProperty({ type: UserResponseDto })
-  user: UserResponseDto;
+  @ApiProperty({ example: 'success' })
+  status: string;
 
-  @ApiProperty({ 
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwMzk3MDM0fQ.example',
-    description: 'JWT access token for API authentication'
+  @ApiProperty({ example: 'User logged in successfully' })
+  message: string;
+
+  @ApiProperty({ type: UserResponseDto })
+  publicUser: UserResponseDto;
+
+  @ApiProperty({
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwMzk3MDM0fQ.example',
+    description: 'JWT access token for API authentication',
   })
   accessToken: string;
 
-  @ApiProperty({ 
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwNDU4MjM0fQ.example',
-    description: 'JWT refresh token for getting new access tokens'
+  @ApiProperty({
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwNDU4MjM0fQ.example',
+    description: 'JWT refresh token for getting new access tokens',
   })
-  refreshToken: string;
+  refresh_token: string;
 }
 
 export class RegisterResponseDto extends UserResponseDto {
@@ -49,7 +64,7 @@ export class GetAllUsersResponseDto {
   @ApiProperty({ example: 'Users retrieved successfully' })
   message: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     type: 'array',
     items: {
       type: 'object',
@@ -59,9 +74,9 @@ export class GetAllUsersResponseDto {
         name: { type: 'string', example: 'John Doe' },
         role: { type: 'string', example: 'consultant' },
         user_status: { type: 'string', example: 'pending' },
-        is_verified: { type: 'boolean', example: false }
-      }
-    }
+        is_verified: { type: 'boolean', example: false },
+      },
+    },
   })
   data: any[];
 }
@@ -82,15 +97,17 @@ export class VerifyEmailResponseDto {
 }
 
 export class RefreshTokenResponseDto {
-  @ApiProperty({ 
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwMzk3MDM0fQ.example',
-    description: 'New JWT access token'
+  @ApiProperty({
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwMzk3MDM0fQ.example',
+    description: 'New JWT access token',
   })
   accessToken: string;
 
-  @ApiProperty({ 
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwNDU4MjM0fQ.example',
-    description: 'New JWT refresh token'
+  @ApiProperty({
+    example:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImlhdCI6MTYzMDM5MzQzNCwiZXhwIjoxNjMwNDU4MjM0fQ.example',
+    description: 'New JWT refresh token',
   })
   refresh_token: string;
 }

@@ -22,6 +22,7 @@ import {
 import { User } from 'src/database/entities';
 import { UserStatus, Role } from 'src/modules/admin/enums';
 import { RedisTokenBlacklistService } from './redis-token-blacklist.service';
+import { errorsList } from 'src/common/errors';
 
 @Injectable()
 export class AuthService {
@@ -37,10 +38,11 @@ export class AuthService {
   async getAllUsers() {
     try {
       const users = await this.userDb.find({
-        select: ['id', 'email', 'name', 'role', 'user_status', 'is_verified']
+        select: ['id', 'email', 'name', 'role', 'user_status', 'is_verified'],
       });
       return users;
     } catch (error) {
+      console.error(error);
       throw error;
     }
   }
@@ -70,7 +72,10 @@ export class AuthService {
     await this.userDb.save(user);
 
     // 6) send the “verify your email” link
-    await this.emailService.sendVerificationLink(user.email, verification_token);
+    await this.emailService.sendVerificationLink(
+      user.email,
+      verification_token,
+    );
 
     // 7) respond with created and check email to verify
     throw new HttpException(
@@ -83,7 +88,9 @@ export class AuthService {
     // Define admin email (and optionally password) from env
     const adminName = this.configService.get<string>('name');
     const adminEmail = this.configService.get<string>('email');
-    const adminPassword = this.configService.get<any>('password');
+    const adminPassword = this.configService.get<string | undefined>(
+      'password',
+    );
 
     let user = await this.userDb.findOne({ where: { email: dto.email } });
 
@@ -91,7 +98,7 @@ export class AuthService {
     if (dto.email === adminEmail) {
       // Always check password against .env admin password
       if (dto.password !== adminPassword) {
-        throw new UnauthorizedException('Invalid admin credentials');
+        throw new UnauthorizedException(errorsList.invalidCredentials);
       }
       if (!user) {
         const hashed = await bcrypt.hash(adminPassword, 10);
@@ -109,26 +116,26 @@ export class AuthService {
       }
       // Compare password
       if (!user) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException(errorsList.invalidCredentials);
       }
       // Admin skips all checks
     } else {
       // Normal user login flow
       if (!user || !(await bcrypt.compare(dto.password, user.password))) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException(errorsList.invalidCredentials);
       }
       if (!user.is_verified) {
-        throw new UnauthorizedException('Email not verified');
+        throw new UnauthorizedException(errorsList.emailNotVerified);
       }
       if (user.user_status === UserStatus.PENDING) {
-        throw new UnauthorizedException('Awaiting admin approval');
+        throw new UnauthorizedException(errorsList.awaitingAdminApproval);
       }
       if (user.user_status === UserStatus.REJECTED) {
-        throw new UnauthorizedException('Admin Rejected this user already');
+        throw new UnauthorizedException(errorsList.userRegistrationRejected);
       }
     }
 
-    //Payload and tokens generation (access and refresh) and then return to client
+    // Payload and tokens generation (access and refresh) and then return to client
     const payload = { id: user.id, role: user.role };
 
     const accessToken = this.jwtService.sign(payload);
@@ -160,7 +167,7 @@ export class AuthService {
       message: 'User logged in successfully',
       publicUser,
       accessToken,
-      refresh_token,
+      refreshToken: refresh_token,
     };
   }
   async forgotPassword(dto: ForgotPasswordDto) {
@@ -185,7 +192,11 @@ export class AuthService {
     const user = await this.userDb.findOne({
       where: { reset_token: dto.token },
     });
-    if (!user || !user.reset_token_expiry || user.reset_token_expiry < new Date()) {
+    if (
+      !user ||
+      !user.reset_token_expiry ||
+      user.reset_token_expiry < new Date()
+    ) {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
@@ -224,7 +235,6 @@ export class AuthService {
         secret: this.configService.get<string>('refreshTokenSecret'),
       });
 
-
       // 2) Find the user and ensure they have a stored (hashed) refresh token
       const user = await this.userDb.findOne({ where: { id: payload.id } });
       if (!user || !user.refresh_token) {
@@ -233,7 +243,7 @@ export class AuthService {
 
       // 3) Compare the incoming token to the hashed one in DB
       const isMatch = await bcrypt.compare(refresh_token, user.refresh_token);
-     
+
       if (!isMatch) {
         throw new UnauthorizedException('Access Denied');
       }
@@ -243,9 +253,7 @@ export class AuthService {
       const newAccessToken = this.jwtService.sign(newPayload);
       const newrefresh_token = this.jwtService.sign(newPayload, {
         secret: this.configService.get<string>('refreshTokenSecret'),
-        expiresIn: this.configService.get<string>(
-          'refreshTokenExpiration',
-        ),
+        expiresIn: this.configService.get<string>('refreshTokenExpiration'),
       });
 
       // 5) Hash & store the new refresh token
@@ -262,18 +270,15 @@ export class AuthService {
     }
   }
   async logout(userId: number, accessToken?: string) {
-    
     // Blacklist the access token in Redis if provided
     if (accessToken) {
       try {
         await this.redisTokenBlacklistService.addToBlacklist(accessToken);
-      
       } catch (error) {
         console.error('Failed to blacklist token:', error);
-        
       }
     }
-    
+
     // Remove refresh token from database
     await this.userDb.update(userId, { refresh_token: null });
     return { message: 'Logged out successfully' };
