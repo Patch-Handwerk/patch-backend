@@ -59,7 +59,13 @@ export class AuthService {
     const hashed = await bcrypt.hash(dto.password, 10);
 
     // 3) create user instance (not yet saved)
-    const user = await this.userDb.create({ ...dto, password: hashed });
+    const initialStatus =
+      dto.role === Role.CRAFTSMAN ? UserStatus.APPROVED : UserStatus.PENDING;
+    const user = this.userDb.create({
+      ...dto,
+      password: hashed,
+      user_status: initialStatus,
+    });
 
     // 4) generate a one-time verification token
     const verification_token = crypto.randomBytes(32).toString('hex');
@@ -313,7 +319,8 @@ export class AuthService {
         password: '', // No password for OAuth users
         role: role === 'craftsman' ? Role.CRAFTSMAN : Role.CONSULTANT, // Use selected role
         is_verified: true, // OAuth emails are pre-verified
-        user_status: UserStatus.PENDING, // Still needs admin approval
+        user_status:
+          role === 'craftsman' ? UserStatus.APPROVED : UserStatus.PENDING,
       });
       await this.userDb.save(user);
     }
