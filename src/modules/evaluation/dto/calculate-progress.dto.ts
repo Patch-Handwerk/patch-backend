@@ -50,6 +50,24 @@ export class SimpleSelectedAnswerDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({
+    description: 'i18n translation key for the stage (optional)',
+    example: 'assessment.stage.digiApprentice',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  stageKey?: string;
+
+  @ApiProperty({
+    description: 'i18n translation key for the description (optional)',
+    example: 'assessment.description.analogProcurement',
+    required: false
+  })
+  @IsOptional()
+  @IsString()
+  descriptionKey?: string;
 }
 
 export class CalculateProgressDto {

@@ -80,18 +80,27 @@ export class ClientEvaluationService {
             count: 0,
             totalPoints: 0,
             stages: {},
-            descriptions: {}
+            stageKeys: {},
+            descriptions: {},
+            descriptionKeys: {},
           };
         }
         levelGroups[level].count++;
         levelGroups[level].totalPoints += answer.point;
 
-        // Track stages and descriptions for this level
+        // Track stages and descriptions (raw values) for this level
         if (answer.stage) {
           levelGroups[level].stages[answer.stage] = (levelGroups[level].stages[answer.stage] || 0) + 1;
         }
         if (answer.description) {
           levelGroups[level].descriptions[answer.description] = (levelGroups[level].descriptions[answer.description] || 0) + 1;
+        }
+        // Track translation keys for this level
+        if (answer.stageKey) {
+          levelGroups[level].stageKeys[answer.stageKey] = (levelGroups[level].stageKeys[answer.stageKey] || 0) + 1;
+        }
+        if (answer.descriptionKey) {
+          levelGroups[level].descriptionKeys[answer.descriptionKey] = (levelGroups[level].descriptionKeys[answer.descriptionKey] || 0) + 1;
         }
       });
 
@@ -122,6 +131,8 @@ export class ClientEvaluationService {
       const dominantLevelData = levelGroups[dominantLevel];
       let dominantStage = 'Digital Apprentice'; // default
       let dominantDescription = 'Analog'; // default
+      let dominantStageKey: string | null = null;
+      let dominantDescriptionKey: string | null = null;
 
       if (dominantLevelData) {
         // Find most common stage within the dominant level
@@ -139,6 +150,24 @@ export class ClientEvaluationService {
           if (dominantLevelData.descriptions[desc] > maxDescCount) {
             dominantDescription = desc;
             maxDescCount = dominantLevelData.descriptions[desc];
+          }
+        });
+
+        // Find most common stageKey within the dominant level
+        let maxStageKeyCount = 0;
+        Object.keys(dominantLevelData.stageKeys).forEach(key => {
+          if (dominantLevelData.stageKeys[key] > maxStageKeyCount) {
+            dominantStageKey = key;
+            maxStageKeyCount = dominantLevelData.stageKeys[key];
+          }
+        });
+
+        // Find most common descriptionKey within the dominant level
+        let maxDescKeyCount = 0;
+        Object.keys(dominantLevelData.descriptionKeys).forEach(key => {
+          if (dominantLevelData.descriptionKeys[key] > maxDescKeyCount) {
+            dominantDescriptionKey = key;
+            maxDescKeyCount = dominantLevelData.descriptionKeys[key];
           }
         });
       }
@@ -160,6 +189,8 @@ export class ClientEvaluationService {
         level: dominantLevel,
         stage: dominantStage,
         description: dominantDescription,
+        stageKey: dominantStageKey,
+        descriptionKey: dominantDescriptionKey,
         created_at: new Date()
       });
 
@@ -176,7 +207,9 @@ export class ClientEvaluationService {
         totalPoints,
         calculatedLevel: dominantLevel,
         calculatedStage: dominantStage,
+        calculatedStageKey: dominantStageKey,
         calculatedDescription: dominantDescription,
+        calculatedDescriptionKey: dominantDescriptionKey,
         selectedAnswersCount: selectedAnswers.length,
         progress: progressPercentage, // Progress as percentage (0-100)
       };
@@ -212,6 +245,7 @@ export class ClientEvaluationService {
         data: phases.map(phase => ({
           id: phase.id,
           name: phase.name,
+          translationKey: phase.translationKey,
           subphasesCount: phase.subPhases?.length || 0
         })),
         totalPhases: phases.length
@@ -241,11 +275,13 @@ export class ClientEvaluationService {
         message: 'Subphases retrieved successfully',
         phase: {
           id: phase.id,
-          name: phase.name
+          name: phase.name,
+          translationKey: phase.translationKey,
         },
         data: sortedSubphases.map(subphase => ({
           id: subphase.id,
-          name: subphase.name
+          name: subphase.name,
+          translationKey: subphase.translationKey,
         })),
         totalSubphases: phase.subPhases.length
       };
@@ -287,11 +323,14 @@ export class ClientEvaluationService {
         answersByLevel[level].push({
           id: answer.id,
           answer: answer.answer,
+          answerTranslationKey: answer.answerTranslationKey,
           point: answer.point,
           isStopAnswer: answer.is_stop_answer,
           level: answer.level,
           stage: answer.stage,
-          description: answer.description
+          stageKey: answer.stageKey,
+          description: answer.description,
+          descriptionKey: answer.descriptionKey,
         });
       });
 
@@ -299,11 +338,13 @@ export class ClientEvaluationService {
         message: 'Question and answers retrieved successfully',
         subphase: {
           id: subphase.id,
-          name: subphase.name
+          name: subphase.name,
+          translationKey: subphase.translationKey,
         },
         question: {
           id: subphase.question.id,
           question: subphase.question.question,
+          translationKey: subphase.question.translationKey,
           sortId: subphase.question.sortId
         },
         answersByLevel,
@@ -354,20 +395,25 @@ export class ClientEvaluationService {
           answersByLevel[level].push({
             id: answer.id,
             answer: answer.answer,
+            answerTranslationKey: answer.answerTranslationKey,
             point: answer.point,
             isStopAnswer: answer.is_stop_answer,
             level: answer.level,
             stage: answer.stage,
-            description: answer.description
+            stageKey: answer.stageKey,
+            description: answer.description,
+            descriptionKey: answer.descriptionKey,
           });
         });
 
         return {
           id: subphase.id,
           name: subphase.name,
+          translationKey: subphase.translationKey,
           question: subphase.question ? {
             id: subphase.question.id,
             question: subphase.question.question,
+            translationKey: subphase.question.translationKey,
             sortId: subphase.question.sortId,
             answersByLevel,
             totalAnswers: subphase.question.answers?.length || 0
@@ -379,7 +425,8 @@ export class ClientEvaluationService {
         message: 'Complete phase data retrieved successfully',
         phase: {
           id: phase.id,
-          name: phase.name
+          name: phase.name,
+          translationKey: phase.translationKey,
         },
         subphases: subphasesWithData,
         totalSubphases: phase.subPhases.length
@@ -418,7 +465,9 @@ export class ClientEvaluationService {
           progress: result.progress,
           level: result.level,
           stage: result.stage,
+          stageKey: result.stageKey,
           description: result.description,
+          descriptionKey: result.descriptionKey,
           totalPoints: result.total_points,
           selectedAnswers: result.selected_answer_text,
           createdAt: result.created_at
@@ -462,20 +511,25 @@ export class ClientEvaluationService {
             answersByLevel[level].push({
               id: answer.id,
               answer: answer.answer,
+              answerTranslationKey: answer.answerTranslationKey,
               point: answer.point,
               isStopAnswer: answer.is_stop_answer,
               level: answer.level,
               stage: answer.stage,
-              description: answer.description
+              stageKey: answer.stageKey,
+              description: answer.description,
+              descriptionKey: answer.descriptionKey,
             });
           });
 
           return {
             id: subphase.id,
             name: subphase.name,
+            translationKey: subphase.translationKey,
             question: subphase.question ? {
               id: subphase.question.id,
               question: subphase.question.question,
+              translationKey: subphase.question.translationKey,
               sortId: subphase.question.sortId,
               answersByLevel,
               totalAnswers: subphase.question.answers?.length || 0
@@ -486,6 +540,7 @@ export class ClientEvaluationService {
         return {
           id: phase.id,
           name: phase.name,
+          translationKey: phase.translationKey,
           subphases: subphasesWithData,
           totalSubphases: phase.subPhases.length
         };
