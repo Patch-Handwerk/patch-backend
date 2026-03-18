@@ -35,6 +35,13 @@ export class Results {
   @Column({ type: 'varchar', nullable: true })
   description: string | null;
 
+  // i18n translation keys for stage and description
+  @Column({ type: 'varchar', nullable: true })
+  stageKey: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  descriptionKey: string | null;
+
   // Phase-specific tracking
   @Column({ type: 'varchar', nullable: true })
   phase_name: string | null;

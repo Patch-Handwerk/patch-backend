@@ -9,6 +9,9 @@ export class Phase {
   @Column({ type: 'varchar' })
   name: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  translationKey: string | null;
+
   @OneToMany(() => SubPhase, subPhase => subPhase.parentPhase)
   subPhases: SubPhase[];
 }

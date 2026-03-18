@@ -10,6 +10,9 @@ export class SubPhase {
   @Column({ type: 'varchar' })
   name: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  translationKey: string | null;
+
   @ManyToOne(() => Phase, { nullable: true })
   @JoinColumn({ name: 'parent_phase_id' })
   parentPhase: Phase;

@@ -10,6 +10,9 @@ export class Question {
   @Column()
   question: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  translationKey: string | null;
+
   @Column()
   sortId: number;
 

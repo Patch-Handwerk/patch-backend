@@ -28,4 +28,14 @@ export class Answer {
 
   @Column({ type: 'varchar', nullable: true })
   description: string | null;
+
+  // i18n translation keys
+  @Column({ type: 'varchar', nullable: true })
+  answerTranslationKey: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  stageKey: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  descriptionKey: string | null;
 }
