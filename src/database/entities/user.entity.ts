@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { Role,UserStatus } from '../../modules/admin/enums';
+import { Role, UserStatus } from '../../modules/admin/enums';
 
 @Entity('users')
 export class User {
@@ -15,7 +15,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ type: 'enum', enum: Role, default: Role.CONSULTANT, })
+  @Column({ type: 'enum', enum: Role, default: Role.CONSULTANT })
   role: Role;
 
   @Column({ type: 'enum', enum: UserStatus, default: UserStatus.PENDING })
@@ -42,13 +42,17 @@ export class User {
   @Column({ type: 'text', nullable: true })
   refresh_token: string | null;
 
+  // Onboarding completion flag
+  @Column({ name: 'has_finished_onboarding', default: false })
+  hasFinishedOnboarding: boolean;
+
   //Add user entity for OAuth module
-  @Column({type: 'varchar', nullable: true})
+  @Column({ type: 'varchar', nullable: true })
   provider: string | null; // OAuth provider name (e.g., 'google', 'facebook')
 
-  @Column({type: 'varchar', nullable: true})
+  @Column({ type: 'varchar', nullable: true })
   provider_id: string | null; // Unique ID from OAuth provider (e.g., '1234567890')
 
-  @Column({type: 'varchar', nullable: true})
+  @Column({ type: 'varchar', nullable: true })
   avatar: string | null; //profile picture url (e.g., 'https://example.com/avatar.jpg')
 }

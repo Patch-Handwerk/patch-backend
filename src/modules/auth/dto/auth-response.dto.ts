@@ -23,8 +23,19 @@ export class UserResponseDto {
   })
   status: string;
 
+  @ApiProperty({ example: false })
+  hasFinishedOnboarding: boolean;
+
   @ApiProperty({ example: '2025-08-30T01:39:34.123Z' })
   createdAt: string;
+}
+
+export class UpdateOnboardingStatusResponseDto {
+  @ApiProperty({ example: 'Onboarding status updated successfully' })
+  message: string;
+
+  @ApiProperty({ example: true })
+  hasFinishedOnboarding: boolean;
 }
 
 export class LoginResponseDto {

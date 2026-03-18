@@ -38,7 +38,15 @@ export class AuthService {
   async getAllUsers() {
     try {
       const users = await this.userDb.find({
-        select: ['id', 'email', 'name', 'role', 'user_status', 'is_verified'],
+        select: [
+          'id',
+          'email',
+          'name',
+          'role',
+          'user_status',
+          'is_verified',
+          'hasFinishedOnboarding',
+        ],
       });
       return users;
     } catch (error) {
@@ -288,6 +296,21 @@ export class AuthService {
     // Remove refresh token from database
     await this.userDb.update(userId, { refresh_token: null });
     return { message: 'Logged out successfully' };
+  }
+
+  async updateOnboardingStatus(userId: number) {
+    const user = await this.userDb.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.hasFinishedOnboarding = true;
+    await this.userDb.save(user);
+
+    return {
+      message: 'Onboarding status updated successfully',
+      hasFinishedOnboarding: user.hasFinishedOnboarding,
+    };
   }
 
   async oauthLogin(oauthUser: any, role?: string) {

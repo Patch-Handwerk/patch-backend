@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   Get,
   Query,
@@ -38,6 +39,7 @@ import {
   VerifyEmailResponseDto,
   RefreshTokenResponseDto,
   LogoutResponseDto,
+  UpdateOnboardingStatusResponseDto,
 } from '../dto/auth-response.dto';
 import { ErrorResponseDto } from '../dto/error-response.dto';
 
@@ -231,6 +233,31 @@ export class AuthController {
     await this.authService.logout(req.user.id, accessToken);
 
     return { message: 'Logged out successfully' };
+  }
+
+  // Update onboarding status
+  @ApiOperation({
+    summary: 'Mark onboarding as completed',
+    description:
+      "Updates the authenticated user's onboarding status to completed. Requires a valid JWT token.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Onboarding status updated successfully.',
+    type: UpdateOnboardingStatusResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  @UseGuards(JwtBlacklistGuard)
+  @Patch('users/onboarding')
+  async updateOnboardingStatus(@Req() req: RequestWithUser) {
+    return this.authService.updateOnboardingStatus(req.user.id);
   }
 
   // ==================== OAuth Endpoints ====================
