@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Phase } from 'src/database/entities/phase.entity';
@@ -19,11 +24,20 @@ export class ClientEvaluationService {
     private resultsRepo: Repository<Results>,
     @InjectRepository(User)
     private userRepo: Repository<User>,
-  ) { }
+  ) {}
 
-  async progressCalculation(calculateData: CalculateProgressDto, userId: number) {
+  async progressCalculation(
+    calculateData: CalculateProgressDto,
+    userId: number,
+  ) {
     try {
-      const { phaseName, subphaseName, questionId, questionText, selectedAnswers } = calculateData;
+      const {
+        phaseName,
+        subphaseName,
+        questionId,
+        questionText,
+        selectedAnswers,
+      } = calculateData;
 
       // Use userId from JWT token
       // const tenantId = userId;
@@ -34,7 +48,9 @@ export class ClientEvaluationService {
       }
 
       if (!phaseName || !subphaseName || !questionId) {
-        throw new BadRequestException('Missing required fields: phaseName, subphaseName, questionId');
+        throw new BadRequestException(
+          'Missing required fields: phaseName, subphaseName, questionId',
+        );
       }
 
       // Verify user exists
@@ -50,30 +66,34 @@ export class ClientEvaluationService {
           user_id: userId,
           question_id: questionId,
           phase_name: phaseName,
-          subphase_name: subphaseName
-        }
+          subphase_name: subphaseName,
+        },
       });
 
       if (existingProgress) {
-        throw new BadRequestException(`You have already submitted an answer for this question in ${phaseName} - ${subphaseName}`);
+        throw new BadRequestException(
+          `You have already submitted an answer for this question in ${phaseName} - ${subphaseName}`,
+        );
       }
 
-
-
-
       // Calculate progress percentage based on selected answers
-      const totalPoints = selectedAnswers.reduce((sum, answer) => sum + answer.point, 0);
+      const totalPoints = selectedAnswers.reduce(
+        (sum, answer) => sum + answer.point,
+        0,
+      );
 
       // Use fixed maximum points for the phase (54 points total)
       const maxPossiblePoints = 54;
 
       // Calculate progress as percentage (0-100) based on 54 total points
-      const progressPercentage = Math.round((totalPoints / maxPossiblePoints) * 100);
+      const progressPercentage = Math.round(
+        (totalPoints / maxPossiblePoints) * 100,
+      );
       const progressPercentageString = progressPercentage + `%`;
 
       // Group answers by level to find dominant level
       const levelGroups = {};
-      selectedAnswers.forEach(answer => {
+      selectedAnswers.forEach((answer) => {
         const level = answer.level || 1;
         if (!levelGroups[level]) {
           levelGroups[level] = {
@@ -90,17 +110,22 @@ export class ClientEvaluationService {
 
         // Track stages and descriptions (raw values) for this level
         if (answer.stage) {
-          levelGroups[level].stages[answer.stage] = (levelGroups[level].stages[answer.stage] || 0) + 1;
+          levelGroups[level].stages[answer.stage] =
+            (levelGroups[level].stages[answer.stage] || 0) + 1;
         }
         if (answer.description) {
-          levelGroups[level].descriptions[answer.description] = (levelGroups[level].descriptions[answer.description] || 0) + 1;
+          levelGroups[level].descriptions[answer.description] =
+            (levelGroups[level].descriptions[answer.description] || 0) + 1;
         }
         // Track translation keys for this level
         if (answer.stageKey) {
-          levelGroups[level].stageKeys[answer.stageKey] = (levelGroups[level].stageKeys[answer.stageKey] || 0) + 1;
+          levelGroups[level].stageKeys[answer.stageKey] =
+            (levelGroups[level].stageKeys[answer.stageKey] || 0) + 1;
         }
         if (answer.descriptionKey) {
-          levelGroups[level].descriptionKeys[answer.descriptionKey] = (levelGroups[level].descriptionKeys[answer.descriptionKey] || 0) + 1;
+          levelGroups[level].descriptionKeys[answer.descriptionKey] =
+            (levelGroups[level].descriptionKeys[answer.descriptionKey] || 0) +
+            1;
         }
       });
 
@@ -109,7 +134,7 @@ export class ClientEvaluationService {
       let maxCount = 0;
       let maxPoints = 0;
 
-      Object.keys(levelGroups).forEach(level => {
+      Object.keys(levelGroups).forEach((level) => {
         const levelData = levelGroups[level];
         const levelNum = parseInt(level);
 
@@ -120,7 +145,10 @@ export class ClientEvaluationService {
           maxPoints = levelData.totalPoints;
         } else if (levelNum === dominantLevel) {
           // If same level, use count and points as tiebreaker
-          if (levelData.count > maxCount || (levelData.count === maxCount && levelData.totalPoints > maxPoints)) {
+          if (
+            levelData.count > maxCount ||
+            (levelData.count === maxCount && levelData.totalPoints > maxPoints)
+          ) {
             maxCount = levelData.count;
             maxPoints = levelData.totalPoints;
           }
@@ -137,7 +165,7 @@ export class ClientEvaluationService {
       if (dominantLevelData) {
         // Find most common stage within the dominant level
         let maxStageCount = 0;
-        Object.keys(dominantLevelData.stages).forEach(stage => {
+        Object.keys(dominantLevelData.stages).forEach((stage) => {
           if (dominantLevelData.stages[stage] > maxStageCount) {
             dominantStage = stage;
             maxStageCount = dominantLevelData.stages[stage];
@@ -146,7 +174,7 @@ export class ClientEvaluationService {
 
         // Find most common description within the dominant level
         let maxDescCount = 0;
-        Object.keys(dominantLevelData.descriptions).forEach(desc => {
+        Object.keys(dominantLevelData.descriptions).forEach((desc) => {
           if (dominantLevelData.descriptions[desc] > maxDescCount) {
             dominantDescription = desc;
             maxDescCount = dominantLevelData.descriptions[desc];
@@ -155,7 +183,7 @@ export class ClientEvaluationService {
 
         // Find most common stageKey within the dominant level
         let maxStageKeyCount = 0;
-        Object.keys(dominantLevelData.stageKeys).forEach(key => {
+        Object.keys(dominantLevelData.stageKeys).forEach((key) => {
           if (dominantLevelData.stageKeys[key] > maxStageKeyCount) {
             dominantStageKey = key;
             maxStageKeyCount = dominantLevelData.stageKeys[key];
@@ -164,7 +192,7 @@ export class ClientEvaluationService {
 
         // Find most common descriptionKey within the dominant level
         let maxDescKeyCount = 0;
-        Object.keys(dominantLevelData.descriptionKeys).forEach(key => {
+        Object.keys(dominantLevelData.descriptionKeys).forEach((key) => {
           if (dominantLevelData.descriptionKeys[key] > maxDescKeyCount) {
             dominantDescriptionKey = key;
             maxDescKeyCount = dominantLevelData.descriptionKeys[key];
@@ -174,8 +202,6 @@ export class ClientEvaluationService {
 
       // Progress percentage is already calculated above
 
-
-
       // Save to database with progress as percentage
       const result = this.resultsRepo.create({
         user_id: userId,
@@ -183,7 +209,9 @@ export class ClientEvaluationService {
         subphase_name: subphaseName,
         progress: progressPercentageString, // Store as percentage (0-100)
         question_id: questionId,
-        selected_answer_text: selectedAnswers.map(a => a.answerText).join('; '),
+        selected_answer_text: selectedAnswers
+          .map((a) => a.answerText)
+          .join('; '),
         selected_answer_point: totalPoints,
         total_points: totalPoints,
         level: dominantLevel,
@@ -191,7 +219,7 @@ export class ClientEvaluationService {
         description: dominantDescription,
         stageKey: dominantStageKey,
         descriptionKey: dominantDescriptionKey,
-        created_at: new Date()
+        created_at: new Date(),
       });
 
       await this.resultsRepo.save(result);
@@ -203,7 +231,9 @@ export class ClientEvaluationService {
         subphase_name: subphaseName,
         question_id: questionId,
         question_text: questionText,
-        selected_answer_text: selectedAnswers.map(a => a.answerText).join('; '),
+        selected_answer_text: selectedAnswers
+          .map((a) => a.answerText)
+          .join('; '),
         totalPoints,
         calculatedLevel: dominantLevel,
         calculatedStage: dominantStage,
@@ -214,7 +244,6 @@ export class ClientEvaluationService {
         progress: progressPercentage, // Progress as percentage (0-100)
       };
       return response;
-
     } catch (error) {
       // Re-throw HTTP exceptions as they are
       if (error instanceof HttpException) {
@@ -225,7 +254,10 @@ export class ClientEvaluationService {
       console.error('Progress calculation error:', error);
 
       // Throw appropriate HTTP exception
-      if (error.code === 'ER_NO_SUCH_TABLE' || error.code === 'ER_ACCESS_DENIED_ERROR') {
+      if (
+        error.code === 'ER_NO_SUCH_TABLE' ||
+        error.code === 'ER_ACCESS_DENIED_ERROR'
+      ) {
         throw new InternalServerErrorException('Database connection error');
       }
 
@@ -237,18 +269,18 @@ export class ClientEvaluationService {
     try {
       const phases = await this.phaseRepo.find({
         relations: ['subPhases'],
-        order: { id: 'ASC' }
+        order: { id: 'ASC' },
       });
 
       return {
         message: 'Phases retrieved successfully',
-        data: phases.map(phase => ({
+        phases: phases.map((phase) => ({
           id: phase.id,
           name: phase.name,
           translationKey: phase.translationKey,
-          subphasesCount: phase.subPhases?.length || 0
+          subphasesCount: phase.subPhases?.length || 0,
         })),
-        totalPhases: phases.length
+        count: phases.length,
       };
     } catch (error) {
       console.error('Error fetching phases:', error);
@@ -261,7 +293,7 @@ export class ClientEvaluationService {
     try {
       const phase = await this.phaseRepo.findOne({
         where: { id: phaseId },
-        relations: ['subPhases']
+        relations: ['subPhases'],
       });
 
       if (!phase) {
@@ -278,12 +310,12 @@ export class ClientEvaluationService {
           name: phase.name,
           translationKey: phase.translationKey,
         },
-        data: sortedSubphases.map(subphase => ({
+        subphases: sortedSubphases.map((subphase) => ({
           id: subphase.id,
           name: subphase.name,
           translationKey: subphase.translationKey,
         })),
-        totalSubphases: phase.subPhases.length
+        count: phase.subPhases.length,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -299,7 +331,7 @@ export class ClientEvaluationService {
     try {
       const subphase = await this.subPhaseRepo.findOne({
         where: { id: subphaseId },
-        relations: ['question', 'question.answers']
+        relations: ['question', 'question.answers'],
       });
 
       if (!subphase) {
@@ -307,15 +339,19 @@ export class ClientEvaluationService {
       }
 
       if (!subphase.question) {
-        throw new NotFoundException(`No question found for subphase ${subphaseId}`);
+        throw new NotFoundException(
+          `No question found for subphase ${subphaseId}`,
+        );
       }
 
       // Sort answers by point value and group by level
-      const sortedAnswers = subphase.question.answers.sort((a, b) => a.point - b.point);
+      const sortedAnswers = subphase.question.answers.sort(
+        (a, b) => a.point - b.point,
+      );
 
       // Group answers by level for better organization
       const answersByLevel = {};
-      sortedAnswers.forEach(answer => {
+      sortedAnswers.forEach((answer) => {
         const level = answer.level || 1;
         if (!answersByLevel[level]) {
           answersByLevel[level] = [];
@@ -345,18 +381,20 @@ export class ClientEvaluationService {
           id: subphase.question.id,
           question: subphase.question.question,
           translationKey: subphase.question.translationKey,
-          sortId: subphase.question.sortId
+          sortId: subphase.question.sortId,
         },
         answersByLevel,
-        totalAnswers: subphase.question.answers.length,
-        levelsCount: Object.keys(answersByLevel).length
+        count: subphase.question.answers.length,
+        levelsCount: Object.keys(answersByLevel).length,
       };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
       console.error('Error fetching question:', error);
-      throw new InternalServerErrorException('Failed to fetch question and answers');
+      throw new InternalServerErrorException(
+        'Failed to fetch question and answers',
+      );
     }
   }
 
@@ -368,11 +406,11 @@ export class ClientEvaluationService {
         relations: [
           'subPhases',
           'subPhases.question',
-          'subPhases.question.answers'
+          'subPhases.question.answers',
         ],
         order: {
-          id: 'ASC'
-        }
+          id: 'ASC',
+        },
       });
 
       if (!phase) {
@@ -382,12 +420,13 @@ export class ClientEvaluationService {
       // Sort subphases by ID
       const sortedSubphases = phase.subPhases.sort((a, b) => a.id - b.id);
 
-      const subphasesWithData = sortedSubphases.map(subphase => {
+      const subphasesWithData = sortedSubphases.map((subphase) => {
         const answersByLevel = {};
         // Sort answers by point value
-        const sortedAnswers = subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
+        const sortedAnswers =
+          subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
 
-        sortedAnswers.forEach(answer => {
+        sortedAnswers.forEach((answer) => {
           const level = answer.level || 1;
           if (!answersByLevel[level]) {
             answersByLevel[level] = [];
@@ -410,14 +449,16 @@ export class ClientEvaluationService {
           id: subphase.id,
           name: subphase.name,
           translationKey: subphase.translationKey,
-          question: subphase.question ? {
-            id: subphase.question.id,
-            question: subphase.question.question,
-            translationKey: subphase.question.translationKey,
-            sortId: subphase.question.sortId,
-            answersByLevel,
-            totalAnswers: subphase.question.answers?.length || 0
-          } : null
+          question: subphase.question
+            ? {
+                id: subphase.question.id,
+                question: subphase.question.question,
+                translationKey: subphase.question.translationKey,
+                sortId: subphase.question.sortId,
+                answersByLevel,
+                count: subphase.question.answers?.length || 0,
+              }
+            : null,
         };
       });
 
@@ -429,14 +470,16 @@ export class ClientEvaluationService {
           translationKey: phase.translationKey,
         },
         subphases: subphasesWithData,
-        totalSubphases: phase.subPhases.length
+        count: phase.subPhases.length,
       };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
       }
       console.error('Error fetching complete phase data:', error);
-      throw new InternalServerErrorException('Failed to fetch complete phase data');
+      throw new InternalServerErrorException(
+        'Failed to fetch complete phase data',
+      );
     }
   }
 
@@ -445,20 +488,20 @@ export class ClientEvaluationService {
     try {
       const userResults = await this.resultsRepo.find({
         where: { user_id: userId },
-        order: { created_at: 'DESC' }
+        order: { created_at: 'DESC' },
       });
 
       if (!userResults || userResults.length === 0) {
         return {
           message: 'No progress data found for this user',
           data: [],
-          totalResults: 0
+          count: 0,
         };
       }
 
       return {
         message: 'User progress retrieved successfully',
-        data: userResults.map(result => ({
+        data: userResults.map((result) => ({
           id: result.id,
           phaseName: result.phase_name,
           subphaseName: result.subphase_name,
@@ -470,9 +513,9 @@ export class ClientEvaluationService {
           descriptionKey: result.descriptionKey,
           totalPoints: result.total_points,
           selectedAnswers: result.selected_answer_text,
-          createdAt: result.created_at
+          createdAt: result.created_at,
         })),
-        totalResults: userResults.length
+        count: userResults.length,
       };
     } catch (error) {
       console.error('Error fetching user progress:', error);
@@ -487,23 +530,24 @@ export class ClientEvaluationService {
         relations: [
           'subPhases',
           'subPhases.question',
-          'subPhases.question.answers'
+          'subPhases.question.answers',
         ],
         order: {
-          id: 'ASC'
-        }
+          id: 'ASC',
+        },
       });
 
-      const phasesWithData = phases.map(phase => {
+      const phasesWithData = phases.map((phase) => {
         // Sort subphases by ID
         const sortedSubphases = phase.subPhases.sort((a, b) => a.id - b.id);
 
-        const subphasesWithData = sortedSubphases.map(subphase => {
+        const subphasesWithData = sortedSubphases.map((subphase) => {
           const answersByLevel = {};
           // Sort answers by point value
-          const sortedAnswers = subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
+          const sortedAnswers =
+            subphase.question?.answers?.sort((a, b) => a.point - b.point) || [];
 
-          sortedAnswers.forEach(answer => {
+          sortedAnswers.forEach((answer) => {
             const level = answer.level || 1;
             if (!answersByLevel[level]) {
               answersByLevel[level] = [];
@@ -526,14 +570,16 @@ export class ClientEvaluationService {
             id: subphase.id,
             name: subphase.name,
             translationKey: subphase.translationKey,
-            question: subphase.question ? {
-              id: subphase.question.id,
-              question: subphase.question.question,
-              translationKey: subphase.question.translationKey,
-              sortId: subphase.question.sortId,
-              answersByLevel,
-              totalAnswers: subphase.question.answers?.length || 0
-            } : null
+            question: subphase.question
+              ? {
+                  id: subphase.question.id,
+                  question: subphase.question.question,
+                  translationKey: subphase.question.translationKey,
+                  sortId: subphase.question.sortId,
+                  answersByLevel,
+                  totalAnswers: subphase.question.answers?.length || 0,
+                }
+              : null,
           };
         });
 
@@ -542,19 +588,20 @@ export class ClientEvaluationService {
           name: phase.name,
           translationKey: phase.translationKey,
           subphases: subphasesWithData,
-          totalSubphases: phase.subPhases.length
+          count: phase.subPhases.length,
         };
       });
 
       return {
         message: 'Complete assessment data retrieved successfully',
         phases: phasesWithData,
-        totalPhases: phases.length,
-        totalSubphases: phases.reduce((sum, phase) => sum + phase.subPhases.length, 0)
+        count: phases.length,
       };
     } catch (error) {
       console.error('Error fetching complete assessment:', error);
-      throw new InternalServerErrorException('Failed to fetch complete assessment data');
+      throw new InternalServerErrorException(
+        'Failed to fetch complete assessment data',
+      );
     }
   }
 }

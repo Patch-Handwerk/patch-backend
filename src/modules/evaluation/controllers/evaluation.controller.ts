@@ -1,9 +1,33 @@
-import { Controller, Post, Get, Body, Param, Query, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
-import { ClientEvaluationService } from '../services/evaluation.service';
-import { CalculateProgressDto } from '../dto/calculate-progress.dto';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtBlacklistGuard } from 'src/common/guards/jwt-blacklist.guard';
 import { RequestWithUser } from 'src/config/types/RequestWithUser';
+import { CalculateProgressDto } from '../dto/calculate-progress.dto';
+import {
+  CalculateProgressResponseDto,
+  GetAllPhasesResponseDto,
+  GetCompleteAssessmentResponseDto,
+  GetCompletePhaseResponseDto,
+  GetQuestionResponseDto,
+  GetSubphasesResponseDto,
+  GetUserProgressResponseDto,
+} from '../dto/evaluation-response.dto';
+import { ClientEvaluationService } from '../services/evaluation.service';
 
 @ApiTags('evaluation')
 @ApiBearerAuth('JWT-auth')
@@ -13,13 +37,15 @@ export class EvaluationController {
 
   // Dashboard: Get all phases (for initial dashboard load)
   @Get('phases')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all phases for dashboard',
-    description: 'Retrieves all available phases for the evaluation dashboard. This endpoint provides the main navigation structure for the assessment system.'
+    description:
+      'Retrieves all available phases for the evaluation dashboard. This endpoint provides the main navigation structure for the assessment system.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Phases retrieved successfully',
+    type: GetAllPhasesResponseDto,
   })
   async getAllPhases() {
     return this.evaluationService.getAllPhases();
@@ -27,61 +53,84 @@ export class EvaluationController {
 
   // Get subphases for a specific phase
   @Get('phases/:phaseId/subphases')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get subphases for a specific phase',
-    description: 'Retrieves all subphases associated with a specific evaluation phase. This endpoint provides the detailed breakdown of assessment components within a phase.'
+    description:
+      'Retrieves all subphases associated with a specific evaluation phase. This endpoint provides the detailed breakdown of assessment components within a phase.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Subphases retrieved successfully',
+    type: GetSubphasesResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Phase not found' })
-  @ApiParam({ name: 'phaseId', description: 'ID of the phase to get subphases for', example: 1 })
-  async getSubphasesByPhase(@Param('phaseId') phaseId: number, @Req() req: RequestWithUser) {
+  @ApiParam({
+    name: 'phaseId',
+    description: 'ID of the phase to get subphases for',
+    example: 1,
+  })
+  async getSubphasesByPhase(
+    @Param('phaseId') phaseId: number,
+    @Req() req: RequestWithUser,
+  ) {
     return this.evaluationService.getSubphasesByPhase(phaseId);
   }
 
   // Get question and answers for a specific subphase
   @Get('subphases/:subphaseId/question')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get question and answers for a specific subphase',
-    description: 'Retrieves the question and all possible answers for a specific subphase. This endpoint provides the assessment content that users will interact with.'
+    description:
+      'Retrieves the question and all possible answers for a specific subphase. This endpoint provides the assessment content that users will interact with.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Question and answers retrieved successfully',
+    type: GetQuestionResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Subphase or question not found' })
-  @ApiParam({ name: 'subphaseId', description: 'ID of the subphase to get question for', example: 1 })
+  @ApiParam({
+    name: 'subphaseId',
+    description: 'ID of the subphase to get question for',
+    example: 1,
+  })
   async getQuestionBySubphase(@Param('subphaseId') subphaseId: number) {
     return this.evaluationService.getQuestionBySubphase(subphaseId);
   }
 
   // Get all data for a specific phase (phases + subphases + questions + answers)
   @Get('phases/:phaseId/complete')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get complete data for a specific phase',
-    description: 'Retrieves complete assessment data for a specific phase including all subphases, questions, and answers. This endpoint provides comprehensive phase information in a single request.'
+    description:
+      'Retrieves complete assessment data for a specific phase including all subphases, questions, and answers. This endpoint provides comprehensive phase information in a single request.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Complete phase data retrieved successfully',
+    type: GetCompletePhaseResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Phase not found' })
-  @ApiParam({ name: 'phaseId', description: 'ID of the phase to get complete data for', example: 1 })
+  @ApiParam({
+    name: 'phaseId',
+    description: 'ID of the phase to get complete data for',
+    example: 1,
+  })
   async getCompletePhaseData(@Param('phaseId') phaseId: number) {
     return this.evaluationService.getCompletePhaseData(phaseId);
   }
 
   // Get all data for entire assessment (all phases with complete data)
   @Get('/complete-assessment')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get complete assessment data (all phases)',
-    description: 'Retrieves complete assessment data for all phases including subphases, questions, and answers. This endpoint provides the entire assessment structure in a single request.'
+    description:
+      'Retrieves complete assessment data for all phases including subphases, questions, and answers. This endpoint provides the entire assessment structure in a single request.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Complete assessment data retrieved successfully',
+    type: GetCompleteAssessmentResponseDto,
   })
   async getCompleteAssessment() {
     return this.evaluationService.getCompleteAssessment();
@@ -90,19 +139,32 @@ export class EvaluationController {
   // Calculate progress from selected answers
   @UseGuards(JwtBlacklistGuard)
   @Post('/answers')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Calculate progress from selected answers',
-    description: 'Calculates and stores user progress based on their selected answers. This endpoint processes the evaluation responses and updates the user\'s progress in the system.'
+    description:
+      "Calculates and stores user progress based on their selected answers. This endpoint processes the evaluation responses and updates the user's progress in the system.",
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'Progress calculated and stored successfully',
+    type: CalculateProgressResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Invalid request data or validation error' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  async calculateProgress(@Body() calculateData: CalculateProgressDto, @Req() req: RequestWithUser) {
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request data or validation error',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async calculateProgress(
+    @Body() calculateData: CalculateProgressDto,
+    @Req() req: RequestWithUser,
+  ) {
     if (!req.user || !req.user.id) {
-      throw new UnauthorizedException('User not found in request. Please check your JWT token.');
+      throw new UnauthorizedException(
+        'User not found in request. Please check your JWT token.',
+      );
     }
     const userId = req.user.id;
     return this.evaluationService.progressCalculation(calculateData, userId);
@@ -111,17 +173,29 @@ export class EvaluationController {
   // Get progress for the current user
   @UseGuards(JwtBlacklistGuard)
   @Get(':id/progress')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get progress for the current user',
-    description: 'Retrieves the progress data for a specific user. This endpoint shows the user\'s assessment progress including completed phases, scores, and current status.'
+    description:
+      "Retrieves the progress data for a specific user. This endpoint shows the user's assessment progress including completed phases, scores, and current status.",
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User progress retrieved successfully',
+    type: GetUserProgressResponseDto,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
-  @ApiResponse({ status: 404, description: 'No progress data found for the user' })
-  @ApiParam({ name: 'id', description: 'User ID to get progress for', example: 1 })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No progress data found for the user',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'User ID to get progress for',
+    example: 1,
+  })
   async getUserProgress(@Param('id') id: number) {
     return this.evaluationService.getUserProgress(id);
   }

@@ -104,6 +104,8 @@ Seeders in `src/database/seeders/` use an **upsert pattern**: find existing rows
 { success: boolean, message: string, data?: T, meta?: { timestamp, path, method } }
 ```
 
+> **Important — Swagger documentation**: The DTOs in `evaluation-response.dto.ts` (e.g. `GetAllPhasesDataDto`) describe the shape of the **`data` field only**. The full API response always has the outer `ResponseInterceptor` wrapper. Use the `*ResponseDto` wrapper classes (e.g. `GetAllPhasesResponseDto`) in `@ApiResponse` decorators so Swagger shows the real envelope. Never annotate a controller with a bare data DTO as the response type.
+
 **Config access:**
 ```typescript
 configService.get<string>('accessTokenSecret')   // flat key
