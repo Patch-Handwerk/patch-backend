@@ -60,11 +60,32 @@ User (1) → (N) Results  ← progress stored per question/user
 
 Migrations are used (not `synchronize: true`). SSL enabled in production only.
 
+### Naming Conventions
+
+- **Database columns**: `snake_case` (e.g., `has_finished_onboarding`)
+- **TypeORM entity properties**: `camelCase` with explicit `@Column({ name: 'snake_case' })` mapping when they differ (e.g., `hasFinishedOnboarding` maps to `has_finished_onboarding`)
+- **DTOs & API responses**: Always `camelCase` — never expose `snake_case` to the frontend
+- **Migration files**: `{N}_{Description}.ts` (e.g., `3_AddHasFinishedOnboarding.ts`)
+
+### Translation Keys
+
+All assessment entities (phases, subphases, questions, answers, stages) have `translationKey` columns (or `answerTranslationKey`, `stageKey`, `descriptionKey` for answers). Keys follow `assessment.{entityType}.{camelCaseSlug}` pattern. These are stored in the DB alongside the original German text strings. The seeder in `src/database/seeders/` populates them using an upsert pattern.
+
+### Seed Data
+
+Seeders in `src/database/seeders/` use an **upsert pattern**: find existing rows by a unique field, update if data changed, create if missing. This makes `npm run seed` safe to re-run. Key files:
+- `seed-data.ts` — all phase/subphase/question/answer/stage definitions with translation keys
+- `initial-survey-data.seed.ts` — upsert helpers that write to the database
+
 ### Authentication
 
 - JWT access tokens (15m) + refresh tokens (7d), blacklisted in Redis on logout
 - OAuth (Google, LinkedIn, GitHub): `GET /auth/{provider}?role=...` → callback → redirect to `{FRONTEND_URL}/auth/callback?token=...`
 - Admin auto-created on first login using `ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars
+- `GET /auth/me` — returns fresh user profile (used by frontend to check `hasFinishedOnboarding` etc.)
+- `PATCH /auth/users/onboarding` — sets `hasFinishedOnboarding = true` for the authenticated user
+
+**Adding new user fields**: Update entity → DTO (`auth-response.dto.ts`) → service (`getAllUsers` select, `getCurrentUser` select, `getUserDetails` spread) → controller if needed. The frontend also needs updating (see root `CLAUDE.md`).
 
 ### Key Conventions
 

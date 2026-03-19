@@ -38,6 +38,32 @@ export class UpdateOnboardingStatusResponseDto {
   hasFinishedOnboarding: boolean;
 }
 
+export class CurrentUserResponseDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 'John Doe' })
+  name: string;
+
+  @ApiProperty({ example: 'john.doe@example.com' })
+  email: string;
+
+  @ApiProperty({
+    example: 'consultant',
+    enum: ['CONSULTANT', 'CRAFTSMAN', 'ADMIN'],
+  })
+  role: string;
+
+  @ApiProperty({
+    example: 'PENDING',
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+  })
+  user_status: string;
+
+  @ApiProperty({ example: false })
+  hasFinishedOnboarding: boolean;
+}
+
 export class LoginResponseDto {
   @ApiProperty({ example: 'success' })
   status: string;

@@ -181,7 +181,7 @@ export class AuthService {
       message: 'User logged in successfully',
       publicUser,
       accessToken,
-      refreshToken: refresh_token,
+      refresh_token,
     };
   }
   async forgotPassword(dto: ForgotPasswordDto) {
@@ -296,6 +296,24 @@ export class AuthService {
     // Remove refresh token from database
     await this.userDb.update(userId, { refresh_token: null });
     return { message: 'Logged out successfully' };
+  }
+
+  async getCurrentUser(userId: number) {
+    const user = await this.userDb.findOne({
+      where: { id: userId },
+      select: [
+        'id',
+        'email',
+        'name',
+        'role',
+        'user_status',
+        'hasFinishedOnboarding',
+      ],
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   async updateOnboardingStatus(userId: number) {

@@ -40,6 +40,7 @@ import {
   RefreshTokenResponseDto,
   LogoutResponseDto,
   UpdateOnboardingStatusResponseDto,
+  CurrentUserResponseDto,
 } from '../dto/auth-response.dto';
 import { ErrorResponseDto } from '../dto/error-response.dto';
 
@@ -233,6 +234,27 @@ export class AuthController {
     await this.authService.logout(req.user.id, accessToken);
 
     return { message: 'Logged out successfully' };
+  }
+
+  // Get current authenticated user
+  @ApiOperation({
+    summary: 'Get current user profile',
+    description:
+      'Returns the profile of the currently authenticated user. Requires a valid JWT token.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user profile retrieved successfully.',
+    type: CurrentUserResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @UseGuards(JwtBlacklistGuard)
+  @Get('me')
+  async getCurrentUser(@Req() req: RequestWithUser) {
+    return this.authService.getCurrentUser(req.user.id);
   }
 
   // Update onboarding status
